@@ -39,6 +39,8 @@ interface Term {
     fun getType(): TermType
 
     fun toString(depth: Int): String
+
+    fun getPrefixes() : List<Namespace>
 }
 
 private const val tabSpaces = 4
@@ -49,6 +51,8 @@ data class Var(val variable: String) : Term {
 
     override fun toString(): String = "?$variable"
 
+    override fun getPrefixes(): List<Namespace> = listOf()
+
     override fun toString(depth: Int) = "?$variable".padStart(tabSpaces * depth, ' ')
 }
 
@@ -57,6 +61,8 @@ data class IRI(val namespace: Namespace?, val relativePart: String) : Term {
     constructor(fullUrl: String) : this(null, fullUrl)
 
     override fun getType() = TermType.IRI
+
+    override fun getPrefixes(): List<Namespace> = if(namespace != null) listOf(namespace) else listOf()
 
     override fun toString(): String {
         return if (namespace != null) {
@@ -73,11 +79,13 @@ data class IRI(val namespace: Namespace?, val relativePart: String) : Term {
     }
 }
 
-// "23"^^xsd:integer, "hello world", "Hallo Welt"@de
+// "23"^^xsd:integer, "hello world", TODO: "Hallo Welt"@de
 data class Literal<T>(val value: T, val iri: IRI?) : Term {
     constructor(value: T) : this(value, null)
 
     override fun getType(): TermType = TermType.LITERAL
+
+    override fun getPrefixes(): List<Namespace> = if(iri?.namespace != null) listOf(iri.namespace) else listOf()
 
     override fun toString(): String =
         if (iri != null) {
@@ -92,23 +100,6 @@ data class Literal<T>(val value: T, val iri: IRI?) : Term {
         "$value".padStart(tabSpaces * depth, ' ')
     }
 }
-
-// _:b12
-data class BlankNode(val id: String) : Term {
-    constructor() : this(getNext().toString())
-
-    override fun getType(): TermType = TermType.BLANK_NODE
-
-    override fun toString() = "_:b$id"
-
-    override fun toString(depth: Int) = "_:b$id".padStart(tabSpaces * depth, ' ')
-
-    private companion object {
-        private var counter: Int = 0
-        private fun getNext() = counter++
-    }
-}
-
 
 // RDF-Object == Tail
 data class Tail(val term: Term) {
@@ -183,6 +174,32 @@ private fun MutableList<Pair<List<Term>, MutableList<Term>>>.mapPaths() = mapInd
             if (index == this.size - 1) "" else " ;"
 }
 
+private fun MutableList<Pair<List<Term>, MutableList<Term>>>.getPredicatesRecursively() = flatMap { pair ->
+    val prefixOfPredicates = pair.first.flatMap { predPath ->
+        predPath.getPrefixes()
+    }
+    val prefixOfTails = pair.second.flatMap { tail -> tail.getPrefixes() }
+    prefixOfPredicates + prefixOfTails
+}
+
+// TODO merge BlankNode and BlankNodeTail, to normal class an factory to string based on provided content
+// _:b12
+data class BlankNode(val id: String) : Term {
+    constructor() : this(getNext().toString())
+
+    override fun getType(): TermType = TermType.BLANK_NODE
+
+    override fun toString() = "_:b$id"
+
+    override fun getPrefixes(): List<Namespace> = listOf()
+
+    override fun toString(depth: Int) = "_:b$id".padStart(tabSpaces * depth, ' ')
+
+    private companion object {
+        private var counter: Int = 0
+        private fun getNext() = counter++
+    }
+}
 
 // ... [
 //         ex:age "25" ;
@@ -223,6 +240,8 @@ data class BlankNodeTail(val predicates: List<Term>, val tail: Term) : Term {
 
     override fun getType() = TermType.BLANK_NODE_TAIL
 
+    override fun getPrefixes() = predicatePaths.getPredicatesRecursively()
+
     // add depth index? -> add to Term interface and pad every line based on depth
     override fun toString(): String {
         return predicatePaths.mapPaths().joinToString("\n", prefix = "[\n", postfix = "\n]")
@@ -245,6 +264,8 @@ data class BlankNodeTail(val predicates: List<Term>, val tail: Term) : Term {
 
 interface Graph {
     fun getType(): GraphStatement
+
+    fun getPrefixes(): List<Namespace>
 }
 
 data class BasicGraphPattern(
@@ -280,6 +301,7 @@ data class BasicGraphPattern(
 
     override fun getType() = GraphStatement.BasicGraph
 
+    override fun getPrefixes() = predicatePaths.getPredicatesRecursively()
 
     override fun toString(): String {
         return predicatePaths.mapIndexed { index, pair ->
@@ -306,11 +328,15 @@ enum class GraphStatement {
 data class Union(val gpLeft: GraphPattern, val gpRight: GraphPattern) : Graph {
     override fun toString() = "{$gpLeft}\nUNION\n{$gpRight}\n"
 
+    override fun getPrefixes() = gpLeft.getPrefixes() + gpRight.getPrefixes()
+
     override fun getType() = GraphStatement.UNION
 }
 
 data class Minus(val gpLeft: GraphPattern, val gpRight: GraphPattern) : Graph {
     override fun toString() = "{$gpLeft}\nMINUS\n{$gpRight}\n"
+
+    override fun getPrefixes() = gpLeft.getPrefixes() + gpRight.getPrefixes()
 
     override fun getType() = GraphStatement.MINUS
 }
@@ -319,11 +345,15 @@ data class Minus(val gpLeft: GraphPattern, val gpRight: GraphPattern) : Graph {
 data class Values(val variable: Var, val values: List<Term>) : Graph {
     override fun toString() = "VALUES $variable { ${values.joinToString(" ")} }\n"
 
+    override fun getPrefixes() = values.flatMap { it.getPrefixes() }
+
     override fun getType() = GraphStatement.VALUES
 }
 
 data class Filter(val condition: String) : Graph {
     override fun toString() = "FILTER( $condition )\n"
+
+    override fun getPrefixes() = emptyList<Namespace>()
 
     override fun getType() = GraphStatement.FILTER
 }
@@ -331,11 +361,15 @@ data class Filter(val condition: String) : Graph {
 data class Optional(val gp: GraphPattern) : Graph {
     override fun toString() = "OPTIONAL { $gp }\n"
 
+    override fun getPrefixes() = gp.getPrefixes()
+
     override fun getType() = GraphStatement.OPTIONAL
 }
 
 data class FilterNotExists(val gp: GraphPattern) : Graph {
     override fun toString() = "FILTER NOT EXISTS { $gp }\n"
+
+    override fun getPrefixes() = gp.getPrefixes()
 
     override fun getType() = GraphStatement.OPTIONAL
 }
@@ -379,7 +413,9 @@ class GraphPattern() : Graph {
         return this
     }
 
-    override fun toString() = this.gps.joinToString()
+    override fun toString() = this.gps.joinToString("\n")
+
+    override fun getPrefixes(): List<Namespace> = gps.flatMap { it.getPrefixes() }
 
     override fun getType() = GraphStatement.Graph
 }
@@ -387,16 +423,24 @@ class GraphPattern() : Graph {
 
 class DSL() {
 
-    var selectVars = mutableListOf<Term>()
+    var vars : List<Var>? = null
+    var gp : GraphPattern? = null
+    var limit : Int? = null
+    var offset : Int? = null
+    var prefixes  = setOf<Namespace>()
+    var orderBy : String? = null
 
     fun select(vararg vars: Var): DSL {
-        selectVars = vars.toMutableList()
+        this.vars = vars.toList()
         return this
     }
 
-    fun where(s: GraphPattern): DSL {
+    fun where(gp: GraphPattern): DSL {
+        this.gp = gp
+        prefixes = gp.getPrefixes().toSet()
         return this
     }
+    // overload where func to make nested queries?
 
     // modifiers
     fun groupBy(s: String): DSL {
@@ -415,7 +459,18 @@ class DSL() {
         return this
     }
 
+    fun orderBy(s: String): DSL {
+        orderBy = s
+        return this
+    }
+
     fun build(): String {
-        return ""
+        val s1 = prefixes.joinToString("\n", postfix = "\n") { prefix -> "PREFIX ${prefix.prefix}: <${prefix.localPart}>" }
+        val s2 = if(vars != null) "SELECT ${vars?.joinToString(" ")}\n" else ""
+        val s3 = if(gp != null) "WHERE {\n${gp?.toString()}\n}\n" else ""
+        val s4 = if(limit != null) "LIMIT $limit\n" else ""
+        val s5 = if(offset != null) "OFFSET $offset\n" else ""
+        val s6 = if(orderBy != null) "ORDER BY $orderBy\n" else ""
+        return s1 + s2 + s3 + s4 + s4 + s5 + s6
     }
 }

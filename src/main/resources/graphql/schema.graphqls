@@ -1,0 +1,26 @@
+type Query {
+    mediaConnections(first: Int!, after: String): [Medium]
+}
+
+type Medium {
+    id: ID!
+    title: String
+    thumbnail: String
+}
+
+type MediumConnection {
+    pageInfo: PageInfo!
+    edges: [MediumEdge!]
+}
+
+type PageInfo {
+    hasPreviousPage: Boolean!
+    hasNextPage: Boolean!
+    startCursor: String
+    endCursor: String
+}
+
+type MediumEdge {
+    cursor: String!
+    node: Medium
+}

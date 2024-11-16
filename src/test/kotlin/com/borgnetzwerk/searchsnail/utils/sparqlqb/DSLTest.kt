@@ -18,24 +18,23 @@ class DSLTest : DescribeSpec({
           SELECT ?channelName ?name ?start ?end ?pageid
           WHERE {
             ?media propt:P1 item:Q5 ;
-                  rdfs:label ?channelName ;
-                  propt:P24 / prop:P20 ?sectionStatements  .
+                rdfs:label ?channelName ;
+                propt:P24 / prop:P20 ?sectionStatements  .
             ?sectionStatements pstat:P20 ?name ;
-                              pqual:P18 ?start ;
-                              pqual:P19 ?end ;
-                              pqual:P23 ?index .
-
+                pqual:P18 ?start ;
+                pqual:P19 ?end ;
+                pqual:P23 ?index .
             OPTIONAL {
-              ?sectionStatements pqual:P27 ?pageid ;
+                ?sectionStatements pqual:P27 ?pageid ;
             }
           }
         */
         it("query 1") {
-            val item = Namespace("item", "https://bnwiki.wikibase.cloud/entity/")
-            val propt = Namespace("propt", "https://bnwiki.wikibase.cloud/prop/direct/")
-            val prop = Namespace("prop", "https://bnwiki.wikibase.cloud/prop/")
-            val pqual = Namespace("pqual", "https://bnwiki.wikibase.cloud/prop/qualifier/")
-            val pstat = Namespace("pstat", "https://bnwiki.wikibase.cloud/prop/statement/")
+            val item = Namespace.ITEM
+            val propt = Namespace.PROPT
+            val prop = Namespace.PROP
+            val pqual = Namespace.PQUAL
+            val pstat = Namespace.PSTAT
             val rdfs = Namespace.RDFS
 
             val channelName = Var("channelName")
@@ -46,7 +45,6 @@ class DSLTest : DescribeSpec({
             val media = Var("media")
             val sectionStats = Var("sectionStatements")
             val index = Var("index")
-
 
             val query = DSL()
                 .select(channelName, name, start, end, pageid)
@@ -64,6 +62,10 @@ class DSLTest : DescribeSpec({
                     ).addOptional(
                         GraphPattern().add(
                             BasicGraphPattern(sectionStats, pqual("P27"), pageid)
+                        ).addOptional(
+                            GraphPattern().add(
+                                BasicGraphPattern(sectionStats, pqual("P29"), pageid)
+                            )
                         )
                     )
                 ).orderBy("ASC($index)")

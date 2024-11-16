@@ -2,6 +2,10 @@ package com.borgnetzwerk.searchsnail.utils.sparqlqb
 
 import javax.naming.directory.InvalidAttributesException
 
+private const val tabSpaces = 4
+
+private fun sp(depth: Int) = "".padStart(depth * tabSpaces, ' ')
+private val sp1 = sp(1)
 
 interface Prefixes {
     operator fun invoke(localPart: String): IRI
@@ -21,7 +25,6 @@ data class Namespace(val prefix: String, val localPart: String) : Prefixes {
         val PQUAL = Namespace("pqual", "https://bnwiki.wikibase.cloud/prop/qualifier/")
         val PSTAT = Namespace("pstat", "https://bnwiki.wikibase.cloud/prop/statement/")
         val ITEM = Namespace("item", "https://bnwiki.wikibase.cloud/entity/")
-        val BlankNode = Namespace("_", "")
     }
 }
 
@@ -43,7 +46,7 @@ interface Term {
     fun getPrefixes() : List<Namespace>
 }
 
-private const val tabSpaces = 4
+
 
 // ?var1, ?var2
 data class Var(val variable: String) : Term {
@@ -326,7 +329,7 @@ enum class GraphStatement {
 }
 
 data class Union(val gpLeft: GraphPattern, val gpRight: GraphPattern) : Graph {
-    override fun toString() = "{$gpLeft}\nUNION\n{$gpRight}\n"
+    override fun toString() = "{\n$gpLeft}\nUNION\n{\n$gpRight}"
 
     override fun getPrefixes() = gpLeft.getPrefixes() + gpRight.getPrefixes()
 
@@ -334,7 +337,7 @@ data class Union(val gpLeft: GraphPattern, val gpRight: GraphPattern) : Graph {
 }
 
 data class Minus(val gpLeft: GraphPattern, val gpRight: GraphPattern) : Graph {
-    override fun toString() = "{$gpLeft}\nMINUS\n{$gpRight}\n"
+    override fun toString() = "{\n$gpLeft}\nMINUS\n{\n$gpRight}"
 
     override fun getPrefixes() = gpLeft.getPrefixes() + gpRight.getPrefixes()
 
@@ -343,7 +346,7 @@ data class Minus(val gpLeft: GraphPattern, val gpRight: GraphPattern) : Graph {
 
 // UNDEF and multiple vars unsupported
 data class Values(val variable: Var, val values: List<Term>) : Graph {
-    override fun toString() = "VALUES $variable { ${values.joinToString(" ")} }\n"
+    override fun toString() = "VALUES $variable { \n$sp1${values.joinToString("\n$sp1",)} }"
 
     override fun getPrefixes() = values.flatMap { it.getPrefixes() }
 
@@ -351,7 +354,7 @@ data class Values(val variable: Var, val values: List<Term>) : Graph {
 }
 
 data class Filter(val condition: String) : Graph {
-    override fun toString() = "FILTER( $condition )\n"
+    override fun toString() = "FILTER( $condition )"
 
     override fun getPrefixes() = emptyList<Namespace>()
 
@@ -359,7 +362,7 @@ data class Filter(val condition: String) : Graph {
 }
 
 data class Optional(val gp: GraphPattern) : Graph {
-    override fun toString() = "OPTIONAL { $gp }\n"
+    override fun toString() = "OPTIONAL {\n$gp\n}"
 
     override fun getPrefixes() = gp.getPrefixes()
 
@@ -367,12 +370,13 @@ data class Optional(val gp: GraphPattern) : Graph {
 }
 
 data class FilterNotExists(val gp: GraphPattern) : Graph {
-    override fun toString() = "FILTER NOT EXISTS { $gp }\n"
+    override fun toString() = "FILTER NOT EXISTS {\n$gp\n}"
 
     override fun getPrefixes() = gp.getPrefixes()
 
     override fun getType() = GraphStatement.OPTIONAL
 }
+
 
 // e.g. {... {... FILTER} UNION {...} ... FILTER}
 class GraphPattern() : Graph {
@@ -413,6 +417,7 @@ class GraphPattern() : Graph {
         return this
     }
 
+    // TODO add depth to Graph interface to support nested blocks
     override fun toString() = this.gps.joinToString("\n")
 
     override fun getPrefixes(): List<Namespace> = gps.flatMap { it.getPrefixes() }
@@ -423,12 +428,12 @@ class GraphPattern() : Graph {
 
 class DSL() {
 
-    var vars : List<Var>? = null
-    var gp : GraphPattern? = null
-    var limit : Int? = null
-    var offset : Int? = null
-    var prefixes  = setOf<Namespace>()
-    var orderBy : String? = null
+    private var vars : List<Var>? = null
+    private var gp : GraphPattern? = null
+    private var limit : Int? = null
+    private var offset : Int? = null
+    private var prefixes  = setOf<Namespace>()
+    private var orderBy : String? = null
 
     fun select(vararg vars: Var): DSL {
         this.vars = vars.toList()
@@ -452,11 +457,11 @@ class DSL() {
     }
 
     fun limit(limit: Int): DSL {
-        return this
+        TODO()
     }
 
     fun offset(offset: Int): DSL {
-        return this
+        TODO()
     }
 
     fun orderBy(s: String): DSL {
@@ -464,13 +469,13 @@ class DSL() {
         return this
     }
 
-    fun build(): String {
-        val s1 = prefixes.joinToString("\n", postfix = "\n") { prefix -> "PREFIX ${prefix.prefix}: <${prefix.localPart}>" }
-        val s2 = if(vars != null) "SELECT ${vars?.joinToString(" ")}\n" else ""
-        val s3 = if(gp != null) "WHERE {\n${gp?.toString()}\n}\n" else ""
-        val s4 = if(limit != null) "LIMIT $limit\n" else ""
-        val s5 = if(offset != null) "OFFSET $offset\n" else ""
-        val s6 = if(orderBy != null) "ORDER BY $orderBy\n" else ""
-        return s1 + s2 + s3 + s4 + s4 + s5 + s6
-    }
+    fun build() = listOf(
+        prefixes.joinToString("\n", postfix = "\n") { prefix -> "PREFIX ${prefix.prefix}: <${prefix.localPart}>" },
+        vars?.joinToString(" ", prefix = "SELECT ", postfix = "\n") ?: "",
+        gp?.let { "WHERE {\n$it\n}\n" } ?: "",
+        limit?.let { "LIMIT $it\n" } ?: "",
+        offset?.let { "OFFSET $it\n" } ?: "",
+        orderBy?.let { "ORDER BY $it\n" } ?: "",
+    ).joinToString("")
+
 }

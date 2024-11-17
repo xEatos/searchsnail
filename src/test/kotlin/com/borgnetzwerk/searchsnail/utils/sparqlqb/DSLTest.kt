@@ -68,7 +68,10 @@ class DSLTest : DescribeSpec({
                             )
                         )
                     )
-                ).orderBy("ASC($index)")
+                )
+                .orderBy("ASC($index)")
+                .limit(10)
+                .offset(10)
 
             println(query.build())
         }

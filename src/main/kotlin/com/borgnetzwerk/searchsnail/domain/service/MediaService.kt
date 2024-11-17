@@ -9,4 +9,5 @@ class MediaService(
     val mediaRepository: Media
 ) {
     fun getMedia(first: Int, after: String?): List<Medium> = mediaRepository.getMedia(first, after)
+
 }

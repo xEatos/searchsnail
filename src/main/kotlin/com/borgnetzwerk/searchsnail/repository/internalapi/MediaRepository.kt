@@ -49,6 +49,7 @@ class MediaRepository(
                 UnresolvedThumbnail(URL(row.thumbnail.value)).resolve()
             )
         }
+
 }
 
 @Serializable

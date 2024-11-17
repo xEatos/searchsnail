@@ -1,5 +1,5 @@
 type Query {
-    mediaConnections(first: Int!, after: String): [Medium]
+    mediaConnections(first: Int!, after: String): MediumConnection
 }
 
 type Medium {

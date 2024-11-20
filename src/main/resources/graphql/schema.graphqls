@@ -5,7 +5,10 @@ type Query {
 type Medium {
     id: ID!
     title: String
+    channel: String
     thumbnail: String
+    publication: String
+    duration: Int
 }
 
 type MediumConnection {

@@ -1,3 +1,12 @@
 package com.borgnetzwerk.searchsnail.controller.domain
 
-data class MediumGraphQL(val id: String, val title: String?, val thumbnail: String?)
+import java.time.LocalDate
+
+data class MediumGraphQL(
+    val id: String,
+    val title: String?,
+    val channel: String?,
+    val thumbnail: String?,
+    val duration: Int?,
+    val publication: String?
+)

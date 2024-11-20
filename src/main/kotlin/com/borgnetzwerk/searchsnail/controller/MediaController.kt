@@ -14,21 +14,29 @@ class MediaController(
     val mediaService: MediaService
 ) {
 
+    // TODO Testplan
     @QueryMapping
     fun mediaConnections(@Argument first: Int, @Argument after: String?) =
         mediaService.getMedia(first + 1, after).mapIndexed { index, medium ->
             MediumEdgeGraphQL(
                 index.toString(),
-                MediumGraphQL(medium.id.value, medium.title, medium.thumbnail?.url.toString()),
+                MediumGraphQL(
+                    medium.id.value,
+                    medium.title,
+                    medium.channel,
+                    medium.thumbnail?.url.toString(),
+                    medium.duration?.toSeconds()?.toInt(),
+                    medium.publication?.toString()
+                ),
             )
         }.let { list ->
-            // make Interface for it
+            // make Interface and class for pagination it
             MediumConnectionsGraphQL(
                 PageInfo(
                     hasNextPage = list.size > first,
                     hasPreviousPage = (after?.toInt() ?: 0) > 0,
-                    startCursor = after,
-                    endCursor = ((after?.toInt() ?: 0) + list.size).toString()
+                    startCursor = after ?: "0",
+                    endCursor = ((after?.toInt() ?: 0) + list.size -1).toString()
                 ),
                 edges = list
             )

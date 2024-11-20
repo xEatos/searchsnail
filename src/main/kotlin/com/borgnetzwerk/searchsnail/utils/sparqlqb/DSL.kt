@@ -36,6 +36,7 @@ enum class TermType {
     BLANK_NODE_TAIL,
     LITERAL,
     VARIABLE,
+    AGGREGATION,
 }
 
 interface Term {
@@ -56,6 +57,17 @@ data class Var(val variable: String) : Term {
     override fun getPrefixes(): List<Namespace> = listOf()
 
     override fun toString(depth: Int) = "?$variable".padStart(tabSpaces * depth, ' ')
+}
+
+data class Aggregation(val statement: String) : Term {
+    override fun getType(): TermType = TermType.AGGREGATION
+
+    override fun toString(depth: Int): String = statement
+
+    override fun toString(): String = statement
+
+    override fun getPrefixes(): List<Namespace> = emptyList()
+
 }
 
 // ex:Student, <http://www.example.org/Student>
@@ -453,14 +465,17 @@ class GraphPattern() : Graph {
 // to support nested queries we would need to make the DSL to a Graph too
 class DSL() {
 
-    private var vars: List<Var>? = null
+    private var vars: List<Term>? = null
     private var gp: GraphPattern? = null
     private var limit: Int? = null
     private var offset: Int? = null
     private var prefixes = setOf<Namespace>()
     private var orderBy: String? = null
 
-    fun select(vararg vars: Var): DSL {
+    fun select(vararg vars: Term): DSL {
+        vars.forEach { it ->
+            if (it.getType() != TermType.VARIABLE && it.getType() != TermType.AGGREGATION) { throw IllegalArgumentException() }
+        }
         this.vars = vars.toList()
         return this
     }

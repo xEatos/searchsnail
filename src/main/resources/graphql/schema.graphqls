@@ -25,5 +25,5 @@ type PageInfo {
 
 type MediumEdge {
     cursor: String!
-    node: Medium
+    node: Medium!
 }

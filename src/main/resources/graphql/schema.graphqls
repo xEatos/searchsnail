@@ -27,3 +27,68 @@ type MediumEdge {
     cursor: String!
     node: Medium!
 }
+
+enum ValueType {
+    String,
+    Date,
+    Duration,
+    ISO639,
+    Number,
+}
+
+type WikiDataResource {
+    """" IRI with Q or P-Number """
+    id: ID!
+    """ label of the Q or P-Number """
+    label: String!
+}
+
+input WikiDataResourceInput {
+    """" IRI with Q or P-Number """
+    id: ID!
+    """ label of the Q or P-Number """
+    label: String!
+}
+
+type WikiDataLiteral {
+    """" Text that represents the actual value """
+    value: String!
+    """ Datatype of the value"""
+    type: ValueType!
+    """ language tag (ISO639) of the Literal if it is a text """
+    lang: String
+
+}
+
+input WikiDataLiteralInput {
+    """" Text that represents the actual value """
+    value: String!
+    """ Datatype of the value"""
+    type: ValueType!
+    """ language tag (ISO639) of the Literal if it is a text """
+    lang: String
+}
+
+union WikiData = WikiDataResource | WikiDataLiteral
+
+type FilterOption  {
+    """ e.g. minDate, language (unique) -> rename to filterID: String!, then use Label as actual"""
+    filterId: String!
+    """ e.g. Datepicker, Slider, FreeSolo, LabelSearch, Radio """
+    filterType: String!
+    """label that should be used for the input widget"""
+    label: String!
+    """ e.g. for language: en, de. for Datepicker: interval [date A, date B] """
+    options: [WikiData!]!
+    """group to associate this filter"""
+    group: String
+}
+
+input FilterSelectionInput {
+    """ e.g. minDate, language """
+    filterId: String!
+    """ selected literal values, e.g. minDate: 2024-01-01 """
+    literals: [WikiDataLiteralInput!]!
+    """ selected resources e.g. Q6 """
+    resources: [WikiDataResourceInput!]!
+}

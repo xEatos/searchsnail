@@ -1,4 +1,4 @@
-package com.borgnetzwerk.searchsnail.utils.service
+package com.borgnetzwerk.searchsnail.utils
 
 import arrow.core.Either
 

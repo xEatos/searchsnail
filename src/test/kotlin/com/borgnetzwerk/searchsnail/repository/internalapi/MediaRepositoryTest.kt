@@ -5,8 +5,11 @@ import com.borgnetzwerk.searchsnail.domain.model.Medium
 import com.borgnetzwerk.searchsnail.domain.model.MediumId
 import com.borgnetzwerk.searchsnail.domain.model.ResolvedThumbnail
 import com.borgnetzwerk.searchsnail.domain.model.UnresolvedThumbnail
+import com.borgnetzwerk.searchsnail.repository.serialization.WikidataObject
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.shouldBe
+import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Assertions.*
 import org.junit.platform.commons.annotation.Testable
 import org.springframework.beans.factory.annotation.Autowired
@@ -25,8 +28,9 @@ class MediaRepositoryTest : DescribeSpec({
 
     val mediaRepo = MediaRepository(QueryServiceDispatcher())
 
-    describe("test request"){
-        it("fetch"){
+
+    describe("test request") {
+        it("fetch") {
             mediaRepo.getMedia(10, "0") shouldContain Medium(
                 id = MediumId("https://bnwiki.wikibase.cloud/entity/Q6"),
                 title = "32% aller Erwachsenen haben diese Krankheit. Du auch?",
@@ -35,8 +39,6 @@ class MediaRepositoryTest : DescribeSpec({
                 duration = Duration.parse("PT13M7S"),
                 publication = LocalDate.parse("2023-11-19")
             )
-
-
         }
     }
 

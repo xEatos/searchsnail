@@ -1,6 +1,5 @@
-package com.borgnetzwerk.searchsnail.domain.service
+package com.borgnetzwerk.searchsnail.domain.service.media
 
-import com.borgnetzwerk.searchsnail.domain.model.Media
 import com.borgnetzwerk.searchsnail.domain.model.Medium
 import org.springframework.stereotype.Service
 

@@ -4,7 +4,7 @@ import com.borgnetzwerk.searchsnail.controller.domain.MediumConnectionsGraphQL
 import com.borgnetzwerk.searchsnail.controller.domain.MediumEdgeGraphQL
 import com.borgnetzwerk.searchsnail.controller.domain.MediumGraphQL
 import com.borgnetzwerk.searchsnail.controller.domain.PageInfo
-import com.borgnetzwerk.searchsnail.domain.service.MediaService
+import com.borgnetzwerk.searchsnail.domain.service.media.MediaService
 import org.springframework.graphql.data.method.annotation.Argument
 import org.springframework.graphql.data.method.annotation.QueryMapping
 import org.springframework.stereotype.Controller

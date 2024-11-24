@@ -1,10 +1,9 @@
 package com.borgnetzwerk.searchsnail.repository.internalapi
 
 import com.borgnetzwerk.searchsnail.configuration.QueryServiceDispatcher
-import com.borgnetzwerk.searchsnail.domain.model.Media
-import com.borgnetzwerk.searchsnail.domain.model.Medium
-import com.borgnetzwerk.searchsnail.domain.model.MediumId
-import com.borgnetzwerk.searchsnail.domain.model.UnresolvedThumbnail
+import com.borgnetzwerk.searchsnail.domain.model.*
+import com.borgnetzwerk.searchsnail.domain.service.media.Media
+import com.borgnetzwerk.searchsnail.repository.serialization.*
 import com.borgnetzwerk.searchsnail.utils.sparqlqb.*
 import kotlinx.serialization.Serializable
 import org.springframework.beans.factory.annotation.Autowired
@@ -47,13 +46,10 @@ class MediaRepository(
         )
         .orderBy("ASC($title)")
         .limit(first)
-        .offset(after?.toInt() ?: 0).let { it ->
-            println(it.build())
-            it
-        }
+        .offset(after?.toInt() ?: 0)
 
     override fun getMedia(first: Int, after: String?): List<Medium> = webClient
-        .fetch<MediaQueryResult>(getMediaQuery(first, after))
+        .fetch<QueryResult<Row>>(getMediaQuery(first, after))
         .results.bindings.map { row ->
             Medium(
                 MediumId(row.media.value),
@@ -68,12 +64,6 @@ class MediaRepository(
 }
 
 @Serializable
-data class WikidataObject(val type: String, val value: String)
-
-@Serializable
-data class Head(val vars: List<String>)
-
-@Serializable
 data class Row(
     val media: WikidataObject,
     val mediaName: WikidataObject,
@@ -82,10 +72,4 @@ data class Row(
     val duration: WikidataObject,
     val isoDate: WikidataObject,
 )
-
-@Serializable
-data class Bindings(val bindings: List<Row>)
-
-@Serializable
-data class MediaQueryResult(val head: Head, val results: Bindings)
 

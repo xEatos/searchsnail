@@ -39,6 +39,7 @@ class QueryServiceDispatcher {
             HttpMethod.POST,
             createEntity(queryStr)
         ).body
+        println(response)
         return json.decodeFromString<T>(response ?: "")
     }
 }

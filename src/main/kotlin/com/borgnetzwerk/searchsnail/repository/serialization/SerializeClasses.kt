@@ -10,7 +10,7 @@ import kotlinx.serialization.json.buildJsonObject
 data class WikidataObject(
     val type: String,
     val value: String,
-    val lang: String?
+    val lang: String? = null
 )
 
 object WikidataObjectTransformer : JsonTransformingSerializer<WikidataObject>(WikidataObject.serializer()) {

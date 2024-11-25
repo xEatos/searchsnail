@@ -66,7 +66,9 @@ class MediaRepository(
 @Serializable
 data class Row(
     val media: WikidataObject,
+    @Serializable(with = WikidataObjectTransformer::class)
     val mediaName: WikidataObject,
+    @Serializable(with = WikidataObjectTransformer::class)
     val channel: WikidataObject,
     val thumbnail: WikidataObject,
     val duration: WikidataObject,

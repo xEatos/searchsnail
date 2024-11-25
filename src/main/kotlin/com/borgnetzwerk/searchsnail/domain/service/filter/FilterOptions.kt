@@ -5,7 +5,7 @@ import com.borgnetzwerk.searchsnail.domain.model.FilterOption
 import com.borgnetzwerk.searchsnail.domain.model.WikiData
 
 interface FilterOptions {
-    fun getOptionsByFilterId(filterId: FilterId) : List<WikiData>
+    fun getOptionsById(filterId: FilterId) : List<WikiData>
     fun getAllFilterIds() : List<FilterId>
-    fun getAllFilterWithoutOptions(filterId : FilterId) : List<FilterOption>
+    fun getFilterOptionById(filterId : FilterId) : FilterOption?
 }

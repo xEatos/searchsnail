@@ -32,7 +32,7 @@ class FilterOptionRepository(
         ).map { FilterId(it) }
 
     // TODO make FilterId to sealed object or enum
-    override fun getOptionsByFilterId(filterId: FilterId): List<WikiData> =
+    override fun getOptionsById(filterId: FilterId): List<WikiData> =
         when (filterId.value) {
             "mediumType" -> getMediumTypOptions()
             "minDate" -> emptyList()
@@ -48,12 +48,32 @@ class FilterOptionRepository(
             else -> emptyList()
         }
 
-    override fun getAllFilterWithoutOptions(filterId: FilterId): List<FilterOption> {
-        TODO("Not yet implemented")
+    override fun getFilterOptionById(filterId: FilterId): FilterOption? {
+        return when (filterId.value) {
+            "mediumType" -> FilterOption(filterId, FilterType.LabelSearch, "Medium", getMediumTypOptions(), "", DSL())
+            "minDate" -> null
+            "maxDate" -> null
+            "category" -> null
+            "subcategory" -> null
+            "channel" -> null
+            "platform" -> null
+            "duration" -> null
+            "hasTranscript" -> null
+            "language" -> FilterOption(filterId, FilterType.LabelSearch, "Language", getLanguageOptions(), "", DSL())
+            "subtitleLanguage" -> null
+            else -> null
+        }
     }
 
+
+
     @Serializable
-    data class EntityRow(val entity: WikidataObject, val entityLabel: WikidataObject)
+    data class EntityRow(
+        val entity: WikidataObject,
+        @Serializable(with = WikidataObjectTransformer::class)
+        val entityLabel: WikidataObject
+    )
+
     @Serializable
     data class LiteralRow(
         @Serializable(with = WikidataObjectTransformer::class)
@@ -66,7 +86,7 @@ class FilterOptionRepository(
     // use this only if you want exclusively IRIs
     private fun getOnlyEntities(predicate: IRI, tail: Term): List<WikiDataResource> {
         val dsl = DSL()
-            .select(entity)
+            .select(entity, entityLabel)
             .where(
                 GraphPattern()
                     .add(

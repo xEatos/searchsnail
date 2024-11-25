@@ -1,5 +1,6 @@
 type Query {
     mediaConnections(first: Int!, after: String): MediumConnection
+    filterOptions: [FilterOption!]!
 }
 
 type Medium {
@@ -42,14 +43,6 @@ type WikiDataResource {
     """ label of the Q or P-Number """
     label: String!
 }
-
-input WikiDataResourceInput {
-    """" IRI with Q or P-Number """
-    id: ID!
-    """ label of the Q or P-Number """
-    label: String!
-}
-
 type WikiDataLiteral {
     """" Text that represents the actual value """
     value: String!
@@ -59,6 +52,16 @@ type WikiDataLiteral {
     lang: String
 
 }
+union WikiData = WikiDataResource | WikiDataLiteral
+
+input WikiDataResourceInput {
+    """" IRI with Q or P-Number """
+    id: ID!
+    """ label of the Q or P-Number """
+    label: String!
+}
+
+
 
 input WikiDataLiteralInput {
     """" Text that represents the actual value """
@@ -69,7 +72,7 @@ input WikiDataLiteralInput {
     lang: String
 }
 
-union WikiData = WikiDataResource | WikiDataLiteral
+
 
 type FilterOption  {
     """ e.g. minDate, language (unique) -> rename to filterID: String!, then use Label as actual"""

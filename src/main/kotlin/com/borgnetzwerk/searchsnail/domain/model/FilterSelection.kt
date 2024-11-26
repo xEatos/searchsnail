@@ -2,6 +2,11 @@ package com.borgnetzwerk.searchsnail.domain.model
 
 import com.borgnetzwerk.searchsnail.utils.sparqlqb.*
 
+// TODO
+// resolve filterIds in controller -> check if they exists in a set
+// move Filter to Repository
+// make build a DSL from the given BasicGraphPatterns and Filters
+
 data class UnresolvedFilterSelection(
     val filterId: FilterId,
     val selections: List<WikiData>

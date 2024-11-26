@@ -34,12 +34,12 @@ class QueryServiceDispatcher {
 
     final inline fun <reified T> fetch(query: DSL): T {
         val queryStr = query.build()
+        println(queryStr)
         val response = restTemplate.exchange<String>(
             url,
             HttpMethod.POST,
             createEntity(queryStr)
         ).body
-        println(response)
         return json.decodeFromString<T>(response ?: "")
     }
 }

@@ -50,21 +50,20 @@ class FilterOptionRepository(
 
     override fun getFilterOptionById(filterId: FilterId): FilterOption? {
         return when (filterId.value) {
-            "mediumType" -> FilterOption(filterId, FilterType.LabelSearch, "Medium", getMediumTypOptions(), "", DSL())
-            "minDate" -> null
-            "maxDate" -> null
-            "category" -> null
-            "subcategory" -> null
+            "mediumType" -> FilterOption(filterId, FilterType.LabelSearch, "Medium", getMediumTypOptions(), "Media", DSL())
+            "minDate" -> FilterOption(filterId, FilterType.Datepicker, "From", getMinDateOptions(), "Date Range", DSL())
+            "maxDate" -> FilterOption(filterId, FilterType.Datepicker, "To", getMaxDateOptions(), "Date Range", DSL())
+            "category" -> FilterOption(filterId, FilterType.LabelSearch, "Category", getCategoryOptions(), "Category", DSL())
+            "subcategory" -> FilterOption(filterId, FilterType.LabelSearch, "Subcategory", getCategoryOptions(), "Category", DSL())
             "channel" -> null
             "platform" -> null
             "duration" -> null
             "hasTranscript" -> null
-            "language" -> FilterOption(filterId, FilterType.LabelSearch, "Language", getLanguageOptions(), "", DSL())
+            "language" -> FilterOption(filterId, FilterType.LabelSearch, "Language", getLanguageOptions(), "Language", DSL())
             "subtitleLanguage" -> null
             else -> null
         }
     }
-
 
 
     @Serializable
@@ -103,23 +102,25 @@ class FilterOptionRepository(
     }
 
     private fun getOnlyLiterals(predicate: IRI, type: ValueType): List<WikiDataLiteral> {
+        return this.getOnlyLiterals(entityLabel, entityLabel, predicate, type)
+    }
+
+    private fun getOnlyLiterals(aggregationOrVar: Term, variable: Term, predicate: IRI, type: ValueType): List<WikiDataLiteral> {
         val dsl = DSL()
-            .select(entityLabel)
+            .select(aggregationOrVar)
             .where(
                 GraphPattern()
                     .add(
-                        BasicGraphPattern(entity, predicate, entityLabel)
+                        BasicGraphPattern(entity, predicate, variable)
                     )
             )
         return webClient.fetch<QueryResult<LiteralRow>>(dsl).results.bindings.mapNotNull { row ->
             when (row.entityLabel.type) {
-                "literal" -> WikiDataLiteral(row.entityLabel.value, type, row.entityLabel.lang?.let { ISO639(it) } )
+                "literal" -> WikiDataLiteral(row.entityLabel.value, type, row.entityLabel.lang?.let { ISO639(it) })
                 else -> null
             }
         }
     }
-
-    // TODO? getMix
 
     private fun getMediumTypOptions(): List<WikiData> = getOnlyEntities(Namespace.PROPT("P9"), Namespace.ITEM("Q5"))
 
@@ -127,7 +128,11 @@ class FilterOptionRepository(
 
     private fun getLanguageOptions(): List<WikiData> = getOnlyLiterals(Namespace.PROPT("P25"), ValueType.ISO639)
 
-    // TODO add aggregator (MIN(?entityValue) AS ?entityLabel)
-    private fun getMinDateOptions(): List<WikiData> = getOnlyLiterals(Namespace.PROPT("P6"), ValueType.Date)
+
+    private fun getMinDateOptions(): List<WikiData> =
+        getOnlyLiterals(Aggregation("(STR(MIN(${Var("date")})) AS $entityLabel)"), Var("date"), Namespace.PROPT("P6"), ValueType.Date)
+
+    private fun getMaxDateOptions(): List<WikiData> =
+        getOnlyLiterals(Aggregation("(STR(MAX(${Var("date")})) AS $entityLabel)"), Var("date"), Namespace.PROPT("P6"), ValueType.Date)
 
 }

@@ -30,7 +30,7 @@ class FilterOptionController(
         }
 }
 
-private fun WikiData.ToGraphQl(): WikiDataGraphQL =
+fun WikiData.ToGraphQl(): WikiDataGraphQL =
     when(this) {
         is WikiDataResource -> WikiDataResourceGraphQL(this.iri, this.label)
         is WikiDataLiteral -> WikiDataLiteralGraphQL(this.value, this.type, this.lang?.value)

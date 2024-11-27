@@ -16,55 +16,17 @@ class FilterOptionsRepository(
     @Autowired
     val webClient: QueryServiceDispatcher
 ) : FilterOptions {
-    override fun getAllFilterIds(): List<FilterId> =
-        listOf(
-            "mediumType",
-            "minDate",
-            "maxDate",
-            "category",
-            "subcategory",
-            "channel",
-            "platform",
-            "duration",
-            "hasTranscript",
-            "language",
-            "subtitleLanguage"
-        ).map { FilterId(it) }
-
-    // TODO make FilterId to sealed object or enum
-    override fun getOptionsById(filterId: FilterId): List<WikiData> =
-        when (filterId.value) {
-            "mediumType" -> getMediumTypOptions()
-            "minDate" -> emptyList()
-            "maxDate" -> emptyList()
-            "category" -> getCategoryOptions()
-            "subcategory" -> emptyList()
-            "channel" -> emptyList()
-            "platform" -> emptyList()
-            "duration" -> emptyList()
-            "hasTranscript" -> emptyList()
-            "language" -> emptyList()
-            "subtitleLanguage" -> emptyList()
-            else -> emptyList()
-        }
-
-    override fun getFilterOptionById(filterId: FilterId): FilterOption? {
+    override fun getFilterOptionById(filterId: ResolvedFilterId): FilterOption? {
         return when (filterId.value) {
-            "mediumType" -> FilterOption(filterId, FilterType.LabelSearch, "Medium", getMediumTypOptions(), "Media", DSL())
-            "minDate" -> FilterOption(filterId, FilterType.Datepicker, "From", getMinDateOptions(), "Date Range", DSL())
-            "maxDate" -> FilterOption(filterId, FilterType.Datepicker, "To", getMaxDateOptions(), "Date Range", DSL())
-            "category" -> FilterOption(filterId, FilterType.LabelSearch, "Category", getCategoryOptions(), "Category", DSL())
-            "subcategory" -> FilterOption(filterId, FilterType.LabelSearch, "Subcategory", getCategoryOptions(), "Category", DSL())
-            "channel" -> null
-            "platform" -> null
-            "duration" -> null
-            "hasTranscript" -> null
-            "language" -> FilterOption(filterId, FilterType.LabelSearch, "Language", getLanguageOptions(), "Language", DSL())
-            "subtitleLanguage" -> null
+            is MediumTyp -> FilterOption(filterId, FilterType.LabelSearch, "Medium", getMediumTypOptions(), "Media")
+            is MinDate -> FilterOption(filterId, FilterType.Datepicker, "From", getMinDateOptions(), "Date Range")
+            is MaxDate -> FilterOption(filterId, FilterType.Datepicker, "To", getMaxDateOptions(), "Date Range")
+            is Category -> FilterOption(filterId, FilterType.LabelSearch, "Category", getCategoryOptions(), "Category")
+            is Subcategory -> FilterOption(filterId, FilterType.LabelSearch, "Subcategory", getCategoryOptions(), "Category")
+            is Language -> FilterOption(filterId, FilterType.LabelSearch, "Language", getLanguageOptions(), "Language")
             else -> null
         }
     }
-
 
     @Serializable
     data class EntityRow(
@@ -134,5 +96,16 @@ class FilterOptionsRepository(
 
     private fun getMaxDateOptions(): List<WikiData> =
         getOnlyLiterals(Aggregation("(STR(MAX(${Var("date")})) AS $entityLabel)"), Var("date"), Namespace.PROPT("P6"), ValueType.Date)
+
+    /*
+    To solve duration see and drawIO diagramm:
+        SELECT ?media ?duration (STR(?minutes) AS ?strMinutes) (STR(?seconds) AS ?strSeconds)
+        WHERE {
+          ?media propt:P26 ?duration .
+          BIND( STRBEFORE (STRAFTER( ?duration, "PT" ), "M" ) AS ?minutes)
+          BIND( STRBEFORE (STRAFTER( ?duration, "M" ), "S" ) AS ?seconds)
+          FILTER(xsd:integer(?minutes)*60 + xsd:integer(?seconds) > "600"^^xsd:integer)
+        }
+    */
 
 }

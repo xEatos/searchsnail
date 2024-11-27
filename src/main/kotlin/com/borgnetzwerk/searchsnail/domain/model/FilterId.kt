@@ -5,41 +5,41 @@ data class UnresolvedFilterId(val value: String) {
 }
 
 @ConsistentCopyVisibility
-data class ResolvedFilterId private constructor(val value: NewFilterId) {
+data class ResolvedFilterId private constructor(val value: FilterId) {
 
     companion object {
         fun create(value: String): ResolvedFilterId? =
             ids[value]?.let { ResolvedFilterId(it) }
 
-        fun create(value: NewFilterId): ResolvedFilterId = ResolvedFilterId(value)
+        fun create(value: FilterId): ResolvedFilterId = ResolvedFilterId(value)
 
         private val ids = mapOf(
-            "mediumType" to MediumTyp,
-            "minDate" to MinDate,
-            "maxDate" to MaxDate,
-            "category" to Category,
-            "subcategory" to Subcategory,
-            "channel" to Channel,
-            "platform" to Platform,
-            "duration" to Duration,
-            "hasTranscript" to HasTranscript,
-            "language" to Language,
-            "subtitleLanguage" to SubtitleLanguage,
+            MediumTyp.toString() to MediumTyp,
+            MinDate.toString() to MinDate,
+            MaxDate.toString() to MaxDate,
+            Category.toString() to Category,
+            Subcategory.toString() to Subcategory,
+            Channel.toString() to Channel,
+            Platform.toString() to Platform,
+            Duration.toString() to Duration,
+            HasTranscript.toString() to HasTranscript,
+            Language.toString() to Language,
+            SubtitleLanguage.toString() to SubtitleLanguage,
         )
 
-        fun getIds() = ids.map { it.value }
+        fun getIds() = ids.map { create(it.value) }
     }
 }
 
-sealed class NewFilterId
-data object MediumTyp : NewFilterId()
-data object MinDate : NewFilterId()
-data object MaxDate : NewFilterId()
-data object Category : NewFilterId()
-data object Subcategory : NewFilterId()
-data object Channel : NewFilterId()
-data object Platform : NewFilterId()
-data object Duration : NewFilterId()
-data object HasTranscript : NewFilterId()
-data object Language : NewFilterId()
-data object SubtitleLanguage : NewFilterId()
+sealed class FilterId
+data object MediumTyp : FilterId()
+data object MinDate : FilterId()
+data object MaxDate : FilterId()
+data object Category : FilterId()
+data object Subcategory : FilterId()
+data object Channel : FilterId()
+data object Platform : FilterId()
+data object Duration : FilterId()
+data object HasTranscript : FilterId()
+data object Language : FilterId()
+data object SubtitleLanguage : FilterId()

@@ -15,6 +15,7 @@ class FilterSelectionRepository(
     @Autowired private val webClient: QueryServiceDispatcher
 ) : FilterSelections {
     override fun resolve(filterSelections: List<FilterSelection>): FilterQueryPattern {
+        println("FilterSelections:$MediumTyp")
         val bgps = mutableListOf<BasicGraphPattern>()
         val filterStr = mutableListOf<FilterString>()
 

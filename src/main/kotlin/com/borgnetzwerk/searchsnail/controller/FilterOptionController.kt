@@ -19,7 +19,7 @@ class FilterOptionController(
     fun filterOptions(): List<FilterOptionGraphQL> =
         filterOptionsService.getAllFilterOptions().map {
             FilterOptionGraphQL(
-                it.filterId.value,
+                it.filterId.value.toString(),
                 it.filterType.toString(),
                 it.label,
                 it.options.map { wikiData ->  wikiData.toGraphQl() },

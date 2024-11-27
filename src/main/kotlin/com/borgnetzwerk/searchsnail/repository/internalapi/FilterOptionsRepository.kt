@@ -69,7 +69,7 @@ class FilterOptionsRepository(
 
     private fun getOnlyLiterals(aggregationOrVar: Term, variable: Term, predicate: IRI, type: ValueType): List<WikiDataLiteral> {
         val dsl = DSL()
-            .select(aggregationOrVar)
+            .select(Aggregation("DISTINCT"), aggregationOrVar)
             .where(
                 GraphPattern()
                     .add(
@@ -88,7 +88,7 @@ class FilterOptionsRepository(
 
     private fun getCategoryOptions(): List<WikiData> = getOnlyEntities(Namespace.PROPT("P1"), Namespace.ITEM("Q10"))
 
-    private fun getLanguageOptions(): List<WikiData> = getOnlyLiterals(Namespace.PROPT("P25"), ValueType.ISO639)
+    private fun getLanguageOptions(): List<WikiData> = getOnlyLiterals(Namespace.PROPT("P8"), ValueType.ISO639)
 
 
     private fun getMinDateOptions(): List<WikiData> =

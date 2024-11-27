@@ -17,9 +17,9 @@ class MediaController(
     fun mediaConnections(
         @Argument first: Int,
         @Argument after: String?,
-        @Argument filter: List<FilterSelectionGraphQL>
+        @Argument filter: List<FilterSelectionGraphQL>?
     ): MediumConnectionsGraphQL {
-        val filterSelections = filter.mapNotNull { f ->
+        val filterSelections = filter?.mapNotNull { f ->
             UnresolvedFilterId(f.filterId).resolve()?.let { resolvedFilterId ->
                 FilterSelection(
                     resolvedFilterId,
@@ -36,7 +36,7 @@ class MediaController(
         }
 
 
-        return mediaService.getMedia(first + 1, after, filterSelections).mapIndexed { index, medium ->
+        return mediaService.getMedia(first + 1, after, filterSelections ?: emptyList()).mapIndexed { index, medium ->
             MediumEdgeGraphQL(
                 index.toString(),
                 MediumGraphQL(

@@ -1,5 +1,5 @@
 plugins {
-	kotlin("jvm") version "1.9.25"
+	kotlin("jvm") version "2.0.21"
 	kotlin("plugin.spring") version "1.9.25"
 	kotlin("plugin.serialization") version "1.9.25"
 	id("org.springframework.boot") version "3.3.5"
@@ -20,13 +20,16 @@ repositories {
 }
 
 dependencies {
+	implementation("org.jetbrains.kotlin:kotlin-reflect")
+	implementation("org.jetbrains.kotlin:kotlin-stdlib")
+
+
 	implementation("org.springframework.boot:spring-boot-starter-graphql")
 
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.boot:spring-boot-starter-webflux")
 
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 	testImplementation("org.springframework:spring-webflux")

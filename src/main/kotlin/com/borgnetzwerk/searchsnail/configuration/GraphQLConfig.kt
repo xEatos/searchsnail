@@ -29,9 +29,7 @@ class GraphQLConfig /*: RuntimeWiringConfigurer */ {
         return RuntimeWiringConfigurer { wiringBuilder ->
 
             val mediaTypeResolver = TypeResolver { env ->
-                val javaObject = env.getObject<Any>()
-
-                when (javaObject) {
+                when (val javaObject = env.getObject<Any>()) {
                     is WikiDataResourceGraphQL -> env.schema.getObjectType("WikiDataResource")
                     is WikiDataLiteralGraphQL -> env.schema.getObjectType("WikiDataLiteral")
                     else -> throw RuntimeException("Unexpected type: ${javaObject::class}")

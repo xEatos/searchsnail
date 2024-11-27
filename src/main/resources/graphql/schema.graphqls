@@ -1,5 +1,5 @@
 type Query {
-    mediaConnections(first: Int!, after: String): MediumConnection
+    mediaConnections(first: Int!, after: String, filter: [FilterSelectionInput!]): MediumConnection
     filterOptions: [FilterOption!]!
 }
 
@@ -54,26 +54,6 @@ type WikiDataLiteral {
 }
 union WikiData = WikiDataResource | WikiDataLiteral
 
-input WikiDataResourceInput {
-    """" IRI with Q or P-Number """
-    id: ID!
-    """ label of the Q or P-Number """
-    label: String!
-}
-
-
-
-input WikiDataLiteralInput {
-    """" Text that represents the actual value """
-    value: String!
-    """ Datatype of the value"""
-    type: ValueType!
-    """ language tag (ISO639) of the Literal if it is a text """
-    lang: String
-}
-
-
-
 type FilterOption  {
     """ e.g. minDate, language (unique) -> rename to filterID: String!, then use Label as actual"""
     filterId: String!
@@ -87,11 +67,27 @@ type FilterOption  {
     group: String
 }
 
+input WikiDataResourceInput {
+    """" IRI with Q or P-Number """
+    id: ID!
+    """ label of the Q or P-Number """
+    label: String!
+}
+
+input WikiDataLiteralInput {
+    """" Text that represents the actual value """
+    value: String!
+    """ Datatype of the value"""
+    type: ValueType!
+    """ language tag (ISO639) of the Literal if it is a text """
+    lang: String
+}
+
 input FilterSelectionInput {
     """ e.g. minDate, language """
     filterId: String!
     """ selected literal values, e.g. minDate: 2024-01-01 """
-    literals: [WikiDataLiteralInput!]!
+    literals: [WikiDataLiteralInput!]
     """ selected resources e.g. Q6 """
-    resources: [WikiDataResourceInput!]!
+    resources: [WikiDataResourceInput!]
 }

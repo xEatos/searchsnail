@@ -1,6 +1,5 @@
 package com.borgnetzwerk.searchsnail.controller.domain
 
-
 data class FilterOptionGraphQL (
     val filterId: String,
     val filterType: String,

@@ -32,24 +32,35 @@ class MediaRepository(
     val publication = Var("publication")
 
 
-    private fun getMediaQuery(first: Int, after: String?): DSL = DSL()
-        .select(media, title, channel, thumbnail, duration, Aggregation("(STR(?publication) AS ?isoDate)"))
-        .where(
-            GraphPattern().add(
-                BasicGraphPattern(media, propt("P1"), item("Q5"))
-                    .add(rdfs("label"), title)
-                    .add(propt("P7"), thumbnail)
-                    .add(propt("P26"), duration)
-                    .add(propt("P6"), publication)
-                    .add(listOf(prop("P10"), pqual("P28"), rdfs("label")), channel)
-            )
-        )
-        .orderBy("ASC($title)")
-        .limit(first)
-        .offset(after?.toInt() ?: 0)
+    private fun getMediaQuery(first: Int, after: String?, queryPattern: FilterQueryPattern): DSL {
+        val gp = GraphPattern()
 
-    override fun getMedia(first: Int, after: String?): List<Medium> = webClient
-        .fetch<QueryResult<Row>>(getMediaQuery(first, after))
+        gp.add(
+            BasicGraphPattern(media, rdfs("label"), title)
+                .add(propt("P7"), thumbnail)
+                .add(propt("P26"), duration)
+                .add(propt("P6"), publication)
+                .add(listOf(prop("P10"), pqual("P28"), rdfs("label")), channel)
+        )
+
+        queryPattern.bgps.forEach { bgp ->
+            gp.add(bgp)
+        }
+
+        queryPattern.filterStrings.forEach{filter ->
+            gp.addFilter(filter)
+        }
+
+        return DSL()
+            .select(media, title, channel, thumbnail, duration, Aggregation("(STR(?publication) AS ?isoDate)"))
+            .where(gp)
+            .orderBy("ASC($title)")
+            .limit(first)
+            .offset(after?.toInt() ?: 0)
+    }
+
+    override fun getMedia(first: Int, after: String?, queryPattern: FilterQueryPattern): List<Medium> = webClient
+        .fetch<QueryResult<Row>>(getMediaQuery(first, after, queryPattern))
         .results.bindings.map { row ->
             Medium(
                 MediumId(row.media.value),

@@ -1,9 +1,7 @@
 package com.borgnetzwerk.searchsnail.controller
 
-import com.borgnetzwerk.searchsnail.controller.domain.MediumConnectionsGraphQL
-import com.borgnetzwerk.searchsnail.controller.domain.MediumEdgeGraphQL
-import com.borgnetzwerk.searchsnail.controller.domain.MediumGraphQL
-import com.borgnetzwerk.searchsnail.controller.domain.PageInfo
+import com.borgnetzwerk.searchsnail.controller.domain.*
+import com.borgnetzwerk.searchsnail.domain.model.*
 import com.borgnetzwerk.searchsnail.domain.service.media.MediaService
 import org.springframework.graphql.data.method.annotation.Argument
 import org.springframework.graphql.data.method.annotation.QueryMapping
@@ -16,8 +14,29 @@ class MediaController(
 
     // TODO Testplan
     @QueryMapping
-    fun mediaConnections(@Argument first: Int, @Argument after: String?) =
-        mediaService.getMedia(first + 1, after).mapIndexed { index, medium ->
+    fun mediaConnections(
+        @Argument first: Int,
+        @Argument after: String?,
+        @Argument filter: List<FilterSelectionGraphQL>
+    ): MediumConnectionsGraphQL {
+        val filterSelections = filter.mapNotNull { f ->
+            UnresolvedFilterId(f.filterId).resolve()?.let { resolvedFilterId ->
+                FilterSelection(
+                    resolvedFilterId,
+                    (f.literals?.map { literal ->
+                        WikiDataLiteral(
+                            literal.value,
+                            literal.type,
+                            literal.lang?.let { ISO639(it) })
+                    } ?: emptyList())
+                            + (f.resources?.map { resource -> WikiDataResource(resource.id, resource.label) }
+                        ?: emptyList())
+                )
+            }
+        }
+
+
+        return mediaService.getMedia(first + 1, after, filterSelections).mapIndexed { index, medium ->
             MediumEdgeGraphQL(
                 index.toString(),
                 MediumGraphQL(
@@ -31,14 +50,17 @@ class MediaController(
             )
         }.let { list ->
             // make Interface and class for pagination it
+            println(filter)
             MediumConnectionsGraphQL(
                 PageInfo(
                     hasNextPage = list.size > first,
                     hasPreviousPage = (after?.toInt() ?: 0) > 0,
                     startCursor = after ?: "0",
-                    endCursor = ((after?.toInt() ?: 0) + list.size -1).toString()
+                    endCursor = ((after?.toInt() ?: 0) + list.size - 1).toString()
                 ),
                 edges = list
             )
         }
+    }
+
 }

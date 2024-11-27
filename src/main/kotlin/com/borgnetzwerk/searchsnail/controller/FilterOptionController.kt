@@ -22,7 +22,7 @@ class FilterOptionController(
                 it.filterId.value,
                 it.filterType.toString(),
                 it.label,
-                it.options.map { wikiData ->  wikiData.ToGraphQl() },
+                it.options.map { wikiData ->  wikiData.toGraphQl() },
                 it.group
                 ) }.let {
                     ary -> println(ary)
@@ -30,7 +30,7 @@ class FilterOptionController(
         }
 }
 
-fun WikiData.ToGraphQl(): WikiDataGraphQL =
+fun WikiData.toGraphQl(): WikiDataGraphQL =
     when(this) {
         is WikiDataResource -> WikiDataResourceGraphQL(this.iri, this.label)
         is WikiDataLiteral -> WikiDataLiteralGraphQL(this.value, this.type, this.lang?.value)

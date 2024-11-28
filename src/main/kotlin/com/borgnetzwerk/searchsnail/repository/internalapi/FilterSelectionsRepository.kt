@@ -127,7 +127,7 @@ class CategoryFilter(val selections: List<WikiData>) : SelectionQueryPattern {
         val category = Var("category")
         val bgp = BasicGraphPattern(Var("media"), Namespace.PROPT("P4"), category)
         val filter = selections.mapNotNull { wikidata ->
-            wikidata.tryInjectResource { resource -> " $category = ${resource.iri} " }
+            wikidata.tryInjectResource { resource -> " $category = <${resource.iri}> " }
         }.joinToString(separator = "||")
         return if (filter.isNotEmpty()) {
             Pair(listOf(bgp), listOf(filter))

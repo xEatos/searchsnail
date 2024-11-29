@@ -5,6 +5,7 @@ enum class FilterType {
     LabelSearch,
     TextInput,
     ValueSlider,
+    Checkbox,
 }
 
 data class FilterOption (

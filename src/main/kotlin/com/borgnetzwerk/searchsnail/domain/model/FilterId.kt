@@ -32,6 +32,7 @@ data class ResolvedFilterId private constructor(val value: FilterId) {
 }
 
 sealed class FilterId
+data object FreeText : FilterId()
 data object MediumTyp : FilterId()
 data object MinDate : FilterId()
 data object MaxDate : FilterId()

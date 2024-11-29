@@ -22,8 +22,12 @@ class FilterOptionsRepository(
             is MinDate -> FilterOption(filterId, FilterType.Datepicker, "From", getMinDateOptions(), "Date Range")
             is MaxDate -> FilterOption(filterId, FilterType.Datepicker, "To", getMaxDateOptions(), "Date Range")
             is Category -> FilterOption(filterId, FilterType.LabelSearch, "Category", getCategoryOptions(), "Category")
-            is Subcategory -> FilterOption(filterId, FilterType.LabelSearch, "Subcategory", getCategoryOptions(), "Category")
             is Language -> FilterOption(filterId, FilterType.LabelSearch, "Language", getLanguageOptions(), "Language")
+            is Platform -> FilterOption(filterId, FilterType.LabelSearch, "Platform", getPlatformOptions(), "Host")
+            is Channel -> FilterOption(filterId, FilterType.LabelSearch, "Channel", getChannelOptions(), "Host")
+            is HasTranscript -> FilterOption(filterId, FilterType.Checkbox, "has Transcript", hasTranscriptOption(), "Transcript")
+            is SubtitleLanguage -> FilterOption(filterId, FilterType.LabelSearch, "Subtitle", getSubtitleLanguageOptions(), "Language")
+            is Duration -> FilterOption(filterId, FilterType.ValueSlider, "Duration", getDurationOptions(), "Duration")
             else -> null
         }
     }
@@ -90,6 +94,13 @@ class FilterOptionsRepository(
 
     private fun getLanguageOptions(): List<WikiData> = getOnlyLiterals(Namespace.PROPT("P8"), ValueType.ISO639)
 
+    private fun getPlatformOptions(): List<WikiData> = getOnlyEntities(Namespace.PROPT("P1"), Namespace.ITEM("Q7"))
+
+    private fun getChannelOptions(): List<WikiData> = getOnlyEntities(Namespace.PROPT("P1"), Namespace.ITEM("Q3"))
+
+    private fun hasTranscriptOption(): List<WikiData> = emptyList()
+
+    private fun getSubtitleLanguageOptions(): List<WikiData> = getOnlyLiterals(Namespace.PROPT("P25"), ValueType.ISO639)
 
     private fun getMinDateOptions(): List<WikiData> =
         getOnlyLiterals(Aggregation("(STR(MIN(${Var("date")})) AS $entityLabel)"), Var("date"), Namespace.PROPT("P6"), ValueType.Date)
@@ -107,5 +118,35 @@ class FilterOptionsRepository(
           FILTER(xsd:integer(?minutes)*60 + xsd:integer(?seconds) > "600"^^xsd:integer)
         }
     */
+
+    private fun getDurationOptions(): List<WikiData> {
+        val dsl = DSL()
+            .select(Aggregation("(MIN(?durationInSec) AS $entityLabel)"))
+            .where(
+                GraphPattern()
+                    .add(
+                        BasicGraphPattern(entity, Namespace.PROPT("P26"), Var("d"))
+                    ).addExpression(
+                        """
+                            BIND( 
+                            IF( REGEX( ?d, "^PT[0-9]+H[0-9]+M[0-9]+S${'$'}"), xsd:integer(STRBEFORE( STRAFTER( ?d, "PT"), "H" )) * 3600 + xsd:integer(STRBEFORE( STRAFTER( ?d, "H"), "M" )) * 60 + xsd:integer(STRBEFORE( STRAFTER( ?d, "M"), "S" )), 0) +
+                            IF( REGEX( ?d, "^PT[0-9]+H[0-9]+S${'$'}"), xsd:integer(STRBEFORE( STRAFTER( ?d, "PT"), "H" )) * 3600 + + xsd:integer(STRBEFORE( STRAFTER( ?d, "H"), "S" )), 0) +
+                            IF( REGEX( ?d, "^PT[0-9]+H[0-9]+M${'$'}"), xsd:integer(STRBEFORE( STRAFTER( ?d, "PT"), "H" )) * 3600 + xsd:integer(STRBEFORE( STRAFTER( ?d, "H"), "M" )) * 60, 0) +
+                            IF( REGEX( ?d, "^PT[0-9]+H${'$'}"), xsd:integer(STRBEFORE( STRAFTER( ?d, "PT"), "H" )) * 3600, 0) +
+                            IF( REGEX( ?d, "^PT[0-9]+M[0-9]+S${'$'}"), xsd:integer(STRBEFORE( STRAFTER( ?d, "PT"), "M" )) * 60 + xsd:integer(STRBEFORE( STRAFTER( ?d, "M"), "S" )), 0) +
+                            IF( REGEX( ?d, "^PT[0-9]+M${'$'}"), xsd:integer(STRBEFORE( STRAFTER( ?d, "PT"), "M" )) * 60, 0) +
+                            IF( REGEX( ?d, "^PT[0-9]+S${'$'}"), xsd:integer(STRBEFORE( STRAFTER( ?d, "PT"), "S" )), 0) 
+                            AS ?durationInSec)
+                        """.trimIndent()
+                    )
+            )
+        println(dsl.build())
+        return webClient.fetch<QueryResult<LiteralRow>>(dsl).results.bindings.mapNotNull { row ->
+            when (row.entityLabel.type) {
+                "literal" -> WikiDataLiteral(row.entityLabel.value, ValueType.Number, null)
+                else -> null
+            }
+        }
+    }
 
 }

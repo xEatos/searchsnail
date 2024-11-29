@@ -7,6 +7,7 @@ enum class ValueType {
     Duration,
     ISO639,
     Number,
+    Boolean,
 }
 
 @JvmInline

@@ -346,6 +346,7 @@ enum class GraphStatement {
     MINUS,
     FILTER,
     FILTER_NOT_EXIST,
+    EXPRESSION,
 
 }
 
@@ -412,6 +413,16 @@ data class FilterNotExists(val gp: GraphPattern) : Graph {
     override fun getType() = GraphStatement.OPTIONAL
 }
 
+data class Expression(val str: String) : Graph {
+    override fun toString() = str
+
+    override fun toString(depth: Int) = "$str\n"
+
+    override fun getPrefixes() = emptyList<Namespace>()
+
+    override fun getType() = GraphStatement.EXPRESSION
+}
+
 
 // e.g. {... {... FILTER} UNION {...} ... FILTER}
 class GraphPattern() : Graph {
@@ -444,6 +455,11 @@ class GraphPattern() : Graph {
 
     fun addFilterNotExists(gp: GraphPattern): GraphPattern {
         gps.add(FilterNotExists(gp))
+        return this
+    }
+
+    fun addExpression(exp: String): GraphPattern {
+        gps.add(Expression(exp))
         return this
     }
 

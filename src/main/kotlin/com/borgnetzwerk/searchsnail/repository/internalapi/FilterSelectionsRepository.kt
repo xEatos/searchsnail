@@ -43,6 +43,7 @@ class FilterSelectionRepository(
             is HasTranscript -> null
             is Language -> LanguageFilter(filterSelection.selections)
             is SubtitleLanguage -> null
+            else -> null
         }
 }
 

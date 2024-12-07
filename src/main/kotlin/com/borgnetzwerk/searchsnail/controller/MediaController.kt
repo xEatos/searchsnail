@@ -44,7 +44,7 @@ class MediaController(
                     medium.title,
                     medium.channel,
                     medium.thumbnail?.url.toString(),
-                    medium.duration?.toSeconds()?.toInt(),
+                    medium.duration,
                     medium.publication?.toString()
                 ),
             )

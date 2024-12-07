@@ -108,45 +108,22 @@ class FilterOptionsRepository(
     private fun getMaxDateOptions(): List<WikiData> =
         getOnlyLiterals(Aggregation("(STR(MAX(${Var("date")})) AS $entityLabel)"), Var("date"), Namespace.PROPT("P6"), ValueType.Date)
 
-    /*
-    To solve duration see and drawIO diagramm:
-        SELECT ?media ?duration (STR(?minutes) AS ?strMinutes) (STR(?seconds) AS ?strSeconds)
-        WHERE {
-          ?media propt:P26 ?duration .
-          BIND( STRBEFORE (STRAFTER( ?duration, "PT" ), "M" ) AS ?minutes)
-          BIND( STRBEFORE (STRAFTER( ?duration, "M" ), "S" ) AS ?seconds)
-          FILTER(xsd:integer(?minutes)*60 + xsd:integer(?seconds) > "600"^^xsd:integer)
-        }
-    */
-
-    private fun getDurationOptions(): List<WikiData> {
+    private fun getAggDurationOptions(agg: String): List<WikiData> {
         val dsl = DSL()
-            .select(Aggregation("(MIN(?durationInSec) AS $entityLabel)"))
+            .select(Aggregation("($agg(?durationInSec) AS $entityLabel)"))
             .where(
                 GraphPattern()
                     .add(
-                        BasicGraphPattern(entity, Namespace.PROPT("P26"), Var("d"))
-                    ).addExpression(
-                        """
-                            BIND( 
-                            IF( REGEX( ?d, "^PT[0-9]+H[0-9]+M[0-9]+S${'$'}"), xsd:integer(STRBEFORE( STRAFTER( ?d, "PT"), "H" )) * 3600 + xsd:integer(STRBEFORE( STRAFTER( ?d, "H"), "M" )) * 60 + xsd:integer(STRBEFORE( STRAFTER( ?d, "M"), "S" )), 0) +
-                            IF( REGEX( ?d, "^PT[0-9]+H[0-9]+S${'$'}"), xsd:integer(STRBEFORE( STRAFTER( ?d, "PT"), "H" )) * 3600 + + xsd:integer(STRBEFORE( STRAFTER( ?d, "H"), "S" )), 0) +
-                            IF( REGEX( ?d, "^PT[0-9]+H[0-9]+M${'$'}"), xsd:integer(STRBEFORE( STRAFTER( ?d, "PT"), "H" )) * 3600 + xsd:integer(STRBEFORE( STRAFTER( ?d, "H"), "M" )) * 60, 0) +
-                            IF( REGEX( ?d, "^PT[0-9]+H${'$'}"), xsd:integer(STRBEFORE( STRAFTER( ?d, "PT"), "H" )) * 3600, 0) +
-                            IF( REGEX( ?d, "^PT[0-9]+M[0-9]+S${'$'}"), xsd:integer(STRBEFORE( STRAFTER( ?d, "PT"), "M" )) * 60 + xsd:integer(STRBEFORE( STRAFTER( ?d, "M"), "S" )), 0) +
-                            IF( REGEX( ?d, "^PT[0-9]+M${'$'}"), xsd:integer(STRBEFORE( STRAFTER( ?d, "PT"), "M" )) * 60, 0) +
-                            IF( REGEX( ?d, "^PT[0-9]+S${'$'}"), xsd:integer(STRBEFORE( STRAFTER( ?d, "PT"), "S" )), 0) 
-                            AS ?durationInSec)
-                        """.trimIndent()
+                        BasicGraphPattern(entity, Namespace.PROPT("P26"), Var("durationInSec"))
                     )
             )
-        println(dsl.build())
         return webClient.fetch<QueryResult<LiteralRow>>(dsl).results.bindings.mapNotNull { row ->
             when (row.entityLabel.type) {
-                "literal" -> WikiDataLiteral(row.entityLabel.value, ValueType.Number, null)
+                "literal" -> WikiDataLiteral(row.entityLabel.value, ValueType.Duration, null)
                 else -> null
             }
         }
     }
 
+    private fun getDurationOptions(): List<WikiData> = (getAggDurationOptions("min") + getAggDurationOptions("max"))
 }

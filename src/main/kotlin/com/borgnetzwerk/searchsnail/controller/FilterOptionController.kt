@@ -24,10 +24,7 @@ class FilterOptionController(
                 it.label,
                 it.options.map { wikiData ->  wikiData.toGraphQl() },
                 it.group
-                ) }.let {
-                    ary -> println(ary)
-            ary
-        }
+                ) }
 }
 
 fun WikiData.toGraphQl(): WikiDataGraphQL =

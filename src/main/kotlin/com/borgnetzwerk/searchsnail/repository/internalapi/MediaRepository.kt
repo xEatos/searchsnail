@@ -56,7 +56,9 @@ class MediaRepository(
             .where(gp)
             .orderBy("ASC($title)")
             .limit(first)
-            .offset(after?.toInt() ?: 0)
+            .offset(after?.toInt() ?: 0).let { it ->
+                println(it.build())
+                it }
     }
 
     override fun getMedia(first: Int, after: String?, queryPattern: FilterQueryPattern): List<Medium> = webClient
@@ -67,7 +69,7 @@ class MediaRepository(
                 row.mediaName.value,
                 row.channel.value,
                 UnresolvedThumbnail(URL(row.thumbnail.value)).resolve(),
-                Duration.parse(row.duration.value),
+                row.duration.value.toInt(),
                 LocalDate.parse(row.isoDate.value.split("T").first())
             )
         }

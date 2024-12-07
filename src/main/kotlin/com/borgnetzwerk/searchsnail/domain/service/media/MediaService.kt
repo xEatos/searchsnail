@@ -17,8 +17,6 @@ class MediaService(
         } else { filters }
 
         val queryPattern = filterSelectionsService.convertToFilterQueryPattern(filtersWithMediumTyp)
-        println(queryPattern)
-
         return mediaRepository.getMedia(first, after, queryPattern)
     }
 

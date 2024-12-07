@@ -3,10 +3,7 @@ package com.borgnetzwerk.searchsnail.repository.internalapi
 import com.borgnetzwerk.searchsnail.configuration.QueryServiceDispatcher
 import com.borgnetzwerk.searchsnail.domain.model.*
 import com.borgnetzwerk.searchsnail.domain.service.filter.FilterSelections
-import com.borgnetzwerk.searchsnail.utils.sparqlqb.BasicGraphPattern
-import com.borgnetzwerk.searchsnail.utils.sparqlqb.IRI
-import com.borgnetzwerk.searchsnail.utils.sparqlqb.Namespace
-import com.borgnetzwerk.searchsnail.utils.sparqlqb.Var
+import com.borgnetzwerk.searchsnail.utils.sparqlqb.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
 
@@ -15,7 +12,6 @@ class FilterSelectionRepository(
     @Autowired private val webClient: QueryServiceDispatcher
 ) : FilterSelections {
     override fun resolve(filterSelections: List<FilterSelection>): FilterQueryPattern {
-        println("FilterSelections:$MediumTyp")
         val bgps = mutableListOf<BasicGraphPattern>()
         val filterStr = mutableListOf<FilterString>()
 
@@ -36,17 +32,15 @@ class FilterSelectionRepository(
             is MinDate -> MinDateFilter(filterSelection.selections)
             is MaxDate -> MaxDateFilter(filterSelection.selections)
             is Category -> CategoryFilter(filterSelection.selections)
-            is Subcategory -> null
-            is Channel -> null
-            is Platform -> null
-            is Duration -> null
-            is HasTranscript -> null
+            is Channel -> ChannelFilter(filterSelection.selections)
+            is Platform -> PlatformFilter(filterSelection.selections)
+            is Duration -> DurationFilter(filterSelection.selections)
+            is HasTranscript -> HasTranscriptFilter(filterSelection.selections)
             is Language -> LanguageFilter(filterSelection.selections)
-            is SubtitleLanguage -> null
+            is SubtitleLanguage -> SubtitleLanguageFilter(filterSelection.selections)
             else -> null
         }
 }
-
 
 interface SelectionQueryPattern {
     fun getQueryPattern(): Pair<List<BasicGraphPattern>, List<FilterString>>
@@ -123,12 +117,93 @@ class MaxDateFilter(val selections: List<WikiData>) : SelectionQueryPattern {
         }
 }
 
+/*
+SELECT ?channelName ?categoryStatements ?category ?subCategory
+WHERE {
+  ?media propt:P1 item:Q5 ;
+         rdfs:label ?channelName ;
+         prop:P4 ?categoryStatements  .
+  ?categoryStatements pstat:P4 ?category .
+  OPTIONAL {
+    ?categoryStatements pqual:P5 ?subCategory ;
+  }
+}
+TODO: need to support options to make this work
+*/
 class CategoryFilter(val selections: List<WikiData>) : SelectionQueryPattern {
     override fun getQueryPattern(): Pair<List<BasicGraphPattern>, List<FilterString>> {
         val category = Var("category")
-        val bgp = BasicGraphPattern(Var("media"), Namespace.PROPT("P4"), category)
+        val subCategory = Var("subCategory")
+        val categoryStatements = Var("categoryStatements")
+
+        val bgps = listOf( BasicGraphPattern(Var("media"), Namespace.PROP("P4"), categoryStatements),
+        BasicGraphPattern(categoryStatements, Namespace.PSTAT("P4"), category))
+
+        val filter = listOf(
+            selections.mapNotNull { wikidata ->
+                wikidata.tryInjectResource { resource -> " $category = <${resource.iri}> " }
+            }.joinToString(separator = "||"),
+        )
+
+        return if (filter.isNotEmpty()) {
+            Pair(bgps, filter)
+        } else empty()
+    }
+}
+
+class ChannelFilter(val selections: List<WikiData>): SelectionQueryPattern {
+    override fun getQueryPattern(): Pair<List<BasicGraphPattern>, List<FilterString>> {
+        val channelEntity = Var("channelEntity")
+        val bgp = BasicGraphPattern(Var("media"), listOf(Namespace.PROP("P10"), Namespace.PQUAL("P28")), channelEntity)
         val filter = selections.mapNotNull { wikidata ->
-            wikidata.tryInjectResource { resource -> " $category = <${resource.iri}> " }
+            wikidata.tryInjectResource { resource -> " $channelEntity = <${resource.iri}> " }
+        }.joinToString(separator = "||")
+        return if (filter.isNotEmpty()) {
+            Pair(listOf(bgp), listOf(filter))
+        } else empty()
+    }
+}
+
+class PlatformFilter(val selections: List<WikiData>): SelectionQueryPattern {
+    override fun getQueryPattern(): Pair<List<BasicGraphPattern>, List<FilterString>> {
+        val platformEntity = Var("platformEntity")
+        val bgp = BasicGraphPattern(Var("media"), listOf(Namespace.PROP("P10"), Namespace.PQUAL("P14")), platformEntity)
+        val filter = selections.mapNotNull { wikidata ->
+            wikidata.tryInjectResource { resource -> " $platformEntity = <${resource.iri}> " }
+        }.joinToString(separator = "||")
+        return if (filter.isNotEmpty()) {
+            Pair(listOf(bgp), listOf(filter))
+        } else empty()
+    }
+}
+
+// todo make duration to int in sec instead of ISO8601
+class DurationFilter(val selections: List<WikiData>) : SelectionQueryPattern {
+    override fun getQueryPattern(): Pair<List<BasicGraphPattern>, List<FilterString>> {
+        val duration = Var("duration")
+        val bgp = BasicGraphPattern(Var("media"), Namespace.PROPT("P26"), duration)
+        return if (selections.size == 2) {
+            Pair(listOf(bgp), listOf("${selections[0].tryInjectLiteral { "\"${it.value}\"" }} <= $duration && $duration <= ${selections[1].tryInjectLiteral { "\"${it.value}\"" }}"))
+        } else {
+            empty()
+        }
+    }
+}
+
+class HasTranscriptFilter(val selections: List<WikiData>): SelectionQueryPattern {
+    override fun getQueryPattern(): Pair<List<BasicGraphPattern>, List<FilterString>> {
+        val transcript = Var("transcript")
+        val bgp = BasicGraphPattern(Var("media"), Namespace.PROPT("P24"), transcript)
+        return Pair(listOf(bgp), emptyList())
+    }
+}
+
+class SubtitleLanguageFilter(val selections: List<WikiData>): SelectionQueryPattern {
+    override fun getQueryPattern(): Pair<List<BasicGraphPattern>, List<FilterString>> {
+        val subtitleLang = Var("subtitleLang")
+        val bgp = BasicGraphPattern(Var("media"), Namespace.PROPT("P25"), subtitleLang)
+        val filter = selections.mapNotNull { wikidata ->
+            wikidata.tryInjectLiteral { resource -> " $subtitleLang = <${resource.value}> " }
         }.joinToString(separator = "||")
         return if (filter.isNotEmpty()) {
             Pair(listOf(bgp), listOf(filter))

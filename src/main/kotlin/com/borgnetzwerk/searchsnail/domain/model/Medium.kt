@@ -12,6 +12,6 @@ data class Medium(
     val title: String?,
     val channel: String?,
     val thumbnail: ResolvedThumbnail?,
-    val duration: Duration?,
+    val duration: Int?,
     val publication: LocalDate?
 )

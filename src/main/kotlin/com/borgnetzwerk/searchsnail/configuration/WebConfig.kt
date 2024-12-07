@@ -34,7 +34,7 @@ class QueryServiceDispatcher {
 
     final inline fun <reified T> fetch(query: DSL): T {
         val queryStr = query.build()
-        println(queryStr)
+        //println(queryStr)
         val response = restTemplate.exchange<String>(
             url,
             HttpMethod.POST,

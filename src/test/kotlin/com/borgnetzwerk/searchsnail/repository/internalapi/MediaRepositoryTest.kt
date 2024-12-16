@@ -1,10 +1,7 @@
 package com.borgnetzwerk.searchsnail.repository.internalapi
 
 import com.borgnetzwerk.searchsnail.configuration.QueryServiceDispatcher
-import com.borgnetzwerk.searchsnail.domain.model.Medium
-import com.borgnetzwerk.searchsnail.domain.model.MediumId
-import com.borgnetzwerk.searchsnail.domain.model.ResolvedThumbnail
-import com.borgnetzwerk.searchsnail.domain.model.UnresolvedThumbnail
+import com.borgnetzwerk.searchsnail.domain.model.*
 import com.borgnetzwerk.searchsnail.repository.serialization.WikidataObject
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldContain
@@ -31,12 +28,15 @@ class MediaRepositoryTest : DescribeSpec({
 
     describe("test request") {
         it("fetch") {
-            mediaRepo.getMedia(10, "0") shouldContain Medium(
+            mediaRepo.getMedia(
+                10, "0",
+                queryPattern = FilterQueryPattern(emptyList(), emptyList())
+            ) shouldContain Medium(
                 id = MediumId("https://bnwiki.wikibase.cloud/entity/Q6"),
                 title = "32% aller Erwachsenen haben diese Krankheit. Du auch?",
                 channel = "Doktor Whatson",
                 thumbnail = UnresolvedThumbnail(URL("https://i.ytimg.com/vi_webp/FuV3ysSKOsw/maxresdefault.webp")).resolve(),
-                duration = Duration.parse("PT13M7S"),
+                duration = 787,
                 publication = LocalDate.parse("2023-11-19")
             )
         }

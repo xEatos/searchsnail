@@ -36,6 +36,8 @@ class MediaController(
         }
 
 
+        // TODO use new Connection instead
+        // TODO write query to get also total amount -> one query and cache result if only first and after changes?
         return mediaService.getMedia(first + 1, after, filterSelections ?: emptyList()).mapIndexed { index, medium ->
             MediumEdgeGraphQL(
                 index.toString(),

@@ -2,7 +2,7 @@ plugins {
 	kotlin("jvm") version "2.0.21"
 	kotlin("plugin.spring") version "1.9.25"
 	kotlin("plugin.serialization") version "1.9.25"
-	id("org.springframework.boot") version "3.3.5"
+	id("org.springframework.boot") version "3.4.0"
 	id("io.spring.dependency-management") version "1.1.6"
 }
 
@@ -47,6 +47,21 @@ dependencies {
 	// json parser
 	implementation("com.google.code.gson:gson:2.11.0")
 	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json")
+
+	//  --- youtube api ---
+	implementation("com.google.api-client:google-api-client:2.4.0")
+	implementation("com.google.oauth-client:google-oauth-client-jetty:2.4.0")
+	implementation("com.google.apis:google-api-services-youtube")
+
+	// https://mvnrepository.com/artifact/com.google.api-client/google-api-client-java6
+	implementation("com.google.api-client:google-api-client-java6:2.1.4")
+
+	// https://mvnrepository.com/artifact/com.google.oauth-client/google-oauth-client-jetty
+	implementation("com.google.oauth-client:google-oauth-client-jetty:1.36.0")
+
+	// https://mvnrepository.com/artifact/com.google.apis/google-api-services-youtube
+	implementation("com.google.apis:google-api-services-youtube:v3-rev222-1.25.0")
+
 
 
 }

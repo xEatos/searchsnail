@@ -3,6 +3,10 @@ type Query {
     filterOptions: [FilterOption!]!
 }
 
+type Mutation {
+    addMedia(media: [MediumInput!]!): MediumConnection
+}
+
 type Medium {
     id: ID!
     title: String
@@ -11,6 +15,48 @@ type Medium {
     publication: String
     duration: Int
 }
+
+enum MediumType {
+    Video,
+    Podcast
+}
+
+"""
+Note: everything is optional, if medium is from Youtube we fetch data ourself.
+Otherwise we return an error if provide optional data is missing.
+"""
+input MediumInput {
+    type: MediumType!
+    title: String
+    publicationDate: String
+    language: [String!]
+    thumbnailUrl: String
+    references: [MediumReferenceInput!]!
+    categories: [String!]
+    transcript: [MediumTranscriptInput!]
+    subtitleLanguage: [String!]
+    duration: Int
+}
+
+input MediumReferenceInput {
+    url: String!
+    publishedBy: String
+    hostedBy: String
+}
+
+input MediumTranscriptInput {
+    language: String!
+    chapters: [TranscriptChaptersInput!]
+}
+
+input TranscriptChaptersInput {
+    heading: String!
+    startTimestamp: Int!
+    endTimestamp: Int!
+    text: String!
+}
+
+
 
 type MediumConnection {
     pageInfo: PageInfo!

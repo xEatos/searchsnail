@@ -38,3 +38,5 @@ data class Bindings<T>(val bindings: List<T>)
 @Serializable
 data class QueryResult<TRow>(val head: Head, val results: Bindings<TRow>)
 
+@Serializable
+data class SecretYouTubeKey(val key: String)

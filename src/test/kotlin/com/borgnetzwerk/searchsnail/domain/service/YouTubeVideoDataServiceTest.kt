@@ -80,7 +80,7 @@ class ChaptersTest : DescribeSpec({
 class RESTServiceTest: DescribeSpec({
     it("get statments for entity Q42", {
         val service = RESTService()
-        val response = service.fetchStatement()?.toByteArray()!!
-        println(String(response, charset("UTF-16")))
+        val response = service.httpClientGetRequest()
+        println(response)
     })
 })

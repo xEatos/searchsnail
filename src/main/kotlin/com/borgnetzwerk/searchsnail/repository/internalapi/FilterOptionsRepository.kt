@@ -1,7 +1,7 @@
 package com.borgnetzwerk.searchsnail.repository.internalapi
 
-import com.borgnetzwerk.searchsnail.configuration.QueryServiceDispatcher
 import com.borgnetzwerk.searchsnail.domain.model.*
+import com.borgnetzwerk.searchsnail.domain.service.QueryServiceDispatcher
 import com.borgnetzwerk.searchsnail.domain.service.filter.FilterOptions
 import com.borgnetzwerk.searchsnail.repository.serialization.QueryResult
 import com.borgnetzwerk.searchsnail.repository.serialization.WikidataObject
@@ -16,6 +16,7 @@ class FilterOptionsRepository(
     @Autowired
     val webClient: QueryServiceDispatcher
 ) : FilterOptions {
+
     override fun getFilterOptionById(filterId: ResolvedFilterId): FilterOption? {
         return when (filterId.value) {
             is MediumTyp -> FilterOption(filterId, FilterType.LabelSearch, "Medium", getMediumTypOptions(), "Media")

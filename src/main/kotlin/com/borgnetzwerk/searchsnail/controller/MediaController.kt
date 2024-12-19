@@ -12,13 +12,12 @@ class MediaController(
     val mediaService: MediaService
 ) {
 
-    // TODO Testplan
     @QueryMapping
     fun mediaConnections(
         @Argument first: Int,
         @Argument after: String?,
         @Argument filter: List<FilterSelectionGraphQL>?
-    ): MediumConnectionsGraphQL {
+    ): ConnectionGraphQL<LeanMediumGraphQL> {
         val filterSelections = filter?.mapNotNull { f ->
             UnresolvedFilterId(f.filterId).resolve()?.let { resolvedFilterId ->
                 FilterSelection(
@@ -36,33 +35,22 @@ class MediaController(
         }
 
 
-        // TODO use new Connection instead
-        // TODO write query to get also total amount -> one query and cache result if only first and after changes?
-        return mediaService.getMedia(first + 1, after, filterSelections ?: emptyList()).mapIndexed { index, medium ->
-            MediumEdgeGraphQL(
-                index.toString(),
-                MediumGraphQL(
-                    medium.id.value,
-                    medium.title,
-                    medium.channel,
-                    medium.thumbnail?.url.toString(),
-                    medium.duration,
-                    medium.publication?.toString()
-                ),
-            )
+        return mediaService.getMedia(first + 1, after, filterSelections ?: emptyList()).let {
+            println(it)
+            it
+        }.map { medium ->
+                LeanMediumGraphQL(
+                    id = medium.id.value,
+                    type = medium.type,
+                    title = medium.title,
+                    publication = medium.publication.toString(),
+                    channel = medium.channel,
+                    thumbnail = medium.thumbnail?.url.toString(),
+                    duration = medium.duration
+                )
         }.let { list ->
-            // make Interface and class for pagination it
-            println(filter)
-            MediumConnectionsGraphQL(
-                PageInfo(
-                    hasNextPage = list.size > first,
-                    hasPreviousPage = (after?.toInt() ?: 0) > 0,
-                    startCursor = after ?: "0",
-                    endCursor = ((after?.toInt() ?: 0) + list.size - 1).toString()
-                ),
-                edges = list
-            )
-        }
+            ConnectionGraphQL.resolve(list, first, after, 1)
+        }!!
     }
 
 }

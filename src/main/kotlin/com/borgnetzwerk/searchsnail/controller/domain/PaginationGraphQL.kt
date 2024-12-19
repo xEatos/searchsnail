@@ -49,7 +49,7 @@ data class ConnectionGraphQL<T>(
     }
 }
 
-data class EdgeGraphQL<T>(val value: T, val cursor: String)
+data class EdgeGraphQL<T>(val node: T, val cursor: String)
 
 data class PageInfoGraphQL(
     val hasPreviousPage: Boolean,

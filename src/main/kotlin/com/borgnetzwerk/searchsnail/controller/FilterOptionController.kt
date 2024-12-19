@@ -1,9 +1,6 @@
 package com.borgnetzwerk.searchsnail.controller
 
-import com.borgnetzwerk.searchsnail.controller.domain.FilterOptionGraphQL
-import com.borgnetzwerk.searchsnail.controller.domain.WikiDataGraphQL
-import com.borgnetzwerk.searchsnail.controller.domain.WikiDataLiteralGraphQL
-import com.borgnetzwerk.searchsnail.controller.domain.WikiDataResourceGraphQL
+import com.borgnetzwerk.searchsnail.controller.domain.*
 import com.borgnetzwerk.searchsnail.domain.model.WikiData
 import com.borgnetzwerk.searchsnail.domain.model.WikiDataLiteral
 import com.borgnetzwerk.searchsnail.domain.model.WikiDataResource
@@ -26,9 +23,3 @@ class FilterOptionController(
                 it.group
                 ) }
 }
-
-fun WikiData.toGraphQl(): WikiDataGraphQL =
-    when(this) {
-        is WikiDataResource -> WikiDataResourceGraphQL(this.iri, this.label)
-        is WikiDataLiteral -> WikiDataLiteralGraphQL(this.value, this.type, this.lang?.value)
-    }

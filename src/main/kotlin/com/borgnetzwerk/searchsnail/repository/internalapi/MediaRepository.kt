@@ -25,6 +25,7 @@ class MediaRepository(
     val rdfs = Namespace.RDFS
 
     val media = Var("media")
+    val mediaType = Var("mediaType")
     val title = Var("mediaName")
     val channel = Var("channel")
     val thumbnail = Var("thumbnail")
@@ -37,6 +38,7 @@ class MediaRepository(
 
         gp.add(
             BasicGraphPattern(media, rdfs("label"), title)
+                .add(listOf(propt("P1"), rdfs("label")) , mediaType )
                 .add(propt("P7"), thumbnail)
                 .add(propt("P26"), duration)
                 .add(propt("P6"), publication)
@@ -52,7 +54,8 @@ class MediaRepository(
         }
 
         return DSL()
-            .select(media, title, channel, thumbnail, duration, Aggregation("(STR(?publication) AS ?isoDate)"))
+            .isDistinct()
+            .select(media, mediaType, title, channel, thumbnail, duration, Aggregation("(STR(?publication) AS ?isoDate)"))
             .where(gp)
             .orderBy("ASC($title)")
             .limit(first)
@@ -61,19 +64,19 @@ class MediaRepository(
                 it }
     }
 
-    override fun getMedia(first: Int, after: String?, queryPattern: FilterQueryPattern): List<Medium> = webClient
+    override fun getMedia(first: Int, after: String?, queryPattern: FilterQueryPattern): List<LeanMedium> = webClient
         .fetch<QueryResult<Row>>(getMediaQuery(first, after, queryPattern))
         .results.bindings.map { row ->
-            Medium(
+            LeanMedium(
                 MediumId(row.media.value),
+                row.mediaType.value,
                 row.mediaName.value,
+                LocalDate.parse(row.isoDate.value.split("T").first()),
                 row.channel.value,
                 UnresolvedThumbnail(URL(row.thumbnail.value)).resolve(),
                 row.duration.value.toInt(),
-                LocalDate.parse(row.isoDate.value.split("T").first())
             )
         }
-
 }
 
 @Serializable
@@ -81,6 +84,8 @@ data class Row(
     val media: WikidataObject,
     @Serializable(with = WikidataObjectTransformer::class)
     val mediaName: WikidataObject,
+    @Serializable(with = WikidataObjectTransformer::class)
+    val mediaType: WikidataObject,
     @Serializable(with = WikidataObjectTransformer::class)
     val channel: WikidataObject,
     val thumbnail: WikidataObject,

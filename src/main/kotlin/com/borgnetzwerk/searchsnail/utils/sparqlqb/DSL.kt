@@ -478,7 +478,7 @@ class GraphPattern() : Graph {
     override fun getType() = GraphStatement.Graph
 }
 
-// to support nested queries we would need to make the DSL to a Graph too
+// TODO: to support nested queries we would need to make the DSL to a Graph too
 class DSL() {
 
     private var vars: List<Term>? = null
@@ -487,12 +487,22 @@ class DSL() {
     private var offset: Int? = null
     private var prefixes = setOf<Namespace>()
     private var orderBy: String? = null
+    private var distinct: String = ""
 
     fun select(vararg vars: Term): DSL {
         vars.forEach { it ->
             if (it.getType() != TermType.VARIABLE && it.getType() != TermType.AGGREGATION) { throw IllegalArgumentException() }
         }
         this.vars = vars.toList()
+        return this
+    }
+
+    fun isDistinct(): DSL {
+        if (this.distinct.isEmpty()){
+            this.distinct = "DISTINCT"
+        } else {
+            this.distinct = ""
+        }
         return this
     }
 
@@ -528,7 +538,7 @@ class DSL() {
 
     fun build() = listOf(
         prefixes.joinToString("\n", postfix = "\n") { prefix -> "PREFIX ${prefix.prefix}: <${prefix.localPart}>" },
-        vars?.joinToString(" ", prefix = "SELECT ", postfix = "\n") ?: "",
+        vars?.joinToString(" ", prefix = "SELECT " + this.distinct, postfix = "\n") ?: "",
         gp?.let { "WHERE {\n${it}\n}\n" } ?: "",
         orderBy?.let { "ORDER BY $it\n" } ?: "",
         limit?.let { "LIMIT $it\n" } ?: "",

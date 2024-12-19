@@ -1,5 +1,6 @@
 package com.borgnetzwerk.searchsnail.domain.service.media
 
+import com.borgnetzwerk.searchsnail.controller.domain.LeanMediumGraphQL
 import com.borgnetzwerk.searchsnail.domain.model.*
 import com.borgnetzwerk.searchsnail.domain.service.filter.FilterSelectionsService
 import com.borgnetzwerk.searchsnail.utils.sparqlqb.BasicGraphPattern
@@ -11,7 +12,7 @@ class MediaService(
     val filterSelectionsService: FilterSelectionsService
 ) {
     // todo make it possible to add a filter
-    fun getMedia(first: Int, after: String?, filters: List<FilterSelection>): List<Medium> {
+    fun getMedia(first: Int, after: String?, filters: List<FilterSelection>): List<LeanMedium> {
         val filtersWithMediumTyp = if (!filters.map { it.filterId.value }.contains(MediumTyp)){
             filters + listOf(FilterSelection(ResolvedFilterId.create(MediumTyp), listOf()))
         } else { filters }

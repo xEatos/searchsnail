@@ -59,7 +59,7 @@ class MediumTypeFilter(val selections: List<WikiData>) : SelectionQueryPattern {
                         Var("media"),
                         listOf(Namespace.PROPT("P1"), Namespace.PROPT("P9")),
                         Namespace.ITEM("Q5")
-                    ),
+                    )
                 ), emptyList()
             )
         } else {

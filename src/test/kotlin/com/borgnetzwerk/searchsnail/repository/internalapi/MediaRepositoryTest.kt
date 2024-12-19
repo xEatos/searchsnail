@@ -31,13 +31,14 @@ class MediaRepositoryTest : DescribeSpec({
             mediaRepo.getMedia(
                 10, "0",
                 queryPattern = FilterQueryPattern(emptyList(), emptyList())
-            ) shouldContain Medium(
+            ) shouldContain LeanMedium(
                 id = MediumId("https://bnwiki.wikibase.cloud/entity/Q6"),
                 title = "32% aller Erwachsenen haben diese Krankheit. Du auch?",
                 channel = "Doktor Whatson",
                 thumbnail = UnresolvedThumbnail(URL("https://i.ytimg.com/vi_webp/FuV3ysSKOsw/maxresdefault.webp")).resolve(),
                 duration = 787,
-                publication = LocalDate.parse("2023-11-19")
+                publication = LocalDate.parse("2023-11-19"),
+                type = "Video"
             )
         }
     }

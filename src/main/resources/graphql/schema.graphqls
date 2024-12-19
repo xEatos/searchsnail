@@ -1,19 +1,62 @@
 type Query {
     mediaConnections(first: Int!, after: String, filter: [FilterSelectionInput!]): MediumConnection
     filterOptions: [FilterOption!]!
+    medium(mediumId: ID!): Medium
+    transcriptChapters(transcriptIds: [ID!]!): [TranscriptText!]
 }
 
 type Mutation {
     addMedia(media: [MediumInput!]!): MediumConnection
 }
 
-type Medium {
+type LeanMedium {
     id: ID!
-    title: String
+    type: MediumType
+    title: String,
+    publication: String
     channel: String
     thumbnail: String
-    publication: String
     duration: Int
+}
+
+type Medium {
+    id: ID!
+    type: MediumType
+    title: String,
+    caption: Caption
+    publication: String
+    channel: WikiData
+    thumbnail: String
+    categories: [WikiData!]!
+    transcripts: [Transcript!]
+    subtitleLanguages: [String!]
+    duration: Int
+}
+
+type Caption {
+    id: ID!
+    text: String!
+}
+
+input TranscriptId {
+    id: ID!
+}
+
+type Transcript {
+    language: String!,
+    chapters: [TranscriptChapter!]
+}
+
+type TranscriptChapter {
+    id: String
+    heading: String
+    startTimestamp: Int
+    endTimestamp: Int
+}
+
+type TranscriptText {
+    id: ID!,
+    text: String!
 }
 
 enum MediumType {
@@ -56,8 +99,6 @@ input TranscriptChaptersInput {
     text: String!
 }
 
-
-
 type MediumConnection {
     pageInfo: PageInfo!
     edges: [MediumEdge!]
@@ -72,7 +113,7 @@ type PageInfo {
 
 type MediumEdge {
     cursor: String!
-    node: Medium!
+    node: LeanMedium!
 }
 
 enum ValueType {

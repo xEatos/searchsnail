@@ -14,6 +14,7 @@ import java.net.URL
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
+
 @Configuration
 class QueryServiceDispatcher {
     val restTemplate = RestTemplate()
@@ -34,12 +35,19 @@ class QueryServiceDispatcher {
 
     final inline fun <reified T> fetch(query: DSL): T {
         val queryStr = query.build()
-        //println(queryStr)
-        val response = restTemplate.exchange<String>(
-            url,
-            HttpMethod.POST,
-            createEntity(queryStr)
-        ).body
-        return json.decodeFromString<T>(response ?: "")
+        println(createEntity(queryStr))
+        println(queryStr)
+        try {
+            val response = restTemplate.exchange<String>(
+                url,
+                HttpMethod.POST,
+                createEntity(queryStr)
+            ).body
+            println(response)
+            return json.decodeFromString<T>(response ?: "")
+        } catch (e: Exception) {
+            println(e.message)
+        }
+        return null!!
     }
 }

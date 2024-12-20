@@ -1,6 +1,7 @@
 package com.borgnetzwerk.searchsnail.domain.model
 
 
+import com.borgnetzwerk.searchsnail.controller.domain.CaptionGraphQL
 import com.borgnetzwerk.searchsnail.controller.domain.MediumGraphQL
 import com.borgnetzwerk.searchsnail.controller.domain.toGraphQl
 import java.time.LocalDate
@@ -27,7 +28,7 @@ data class Medium(
             id = id.value,
             type = type,
             title = title,
-            caption = null,
+            caption = caption?.toGraphQL(),
             publication = publication.toString(),
             channel = channel?.toGraphQl(),
             thumbnail = thumbnail?.url.toString(),
@@ -40,10 +41,13 @@ data class Medium(
 
 }
 
+
 data class Caption(
     val text: String,
     val id: String
-)
+){
+    fun toGraphQL(): CaptionGraphQL = CaptionGraphQL(text, id)
+}
 
 data class LeanMedium(
     val id: MediumId,

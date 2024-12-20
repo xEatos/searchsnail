@@ -29,6 +29,7 @@ type Medium {
     thumbnail: String
     categories: [WikiData!]!
     transcripts: [Transcript!]
+    languages: [String!]
     subtitleLanguages: [String!]
     duration: Int
 }

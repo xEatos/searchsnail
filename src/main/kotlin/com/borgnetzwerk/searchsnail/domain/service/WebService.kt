@@ -1,11 +1,13 @@
 package com.borgnetzwerk.searchsnail.domain.service
 
 
+
 import com.borgnetzwerk.searchsnail.domain.model.JSONYouTubeVideoData
 import com.borgnetzwerk.searchsnail.domain.model.VideoId
 import com.borgnetzwerk.searchsnail.repository.serialization.SecretYouTubeKey
 import com.borgnetzwerk.searchsnail.utils.sparqlqb.DSL
-import kotlinx.serialization.json.Json
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.*
 import org.springframework.context.annotation.Bean
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
@@ -85,6 +87,74 @@ class YoutubeVideoDataService(val key: String) {
     }
 
 
+}
+
+class QueryMiraheze(){
+    private val restService = RESTService()
+
+    private final val json = Json() { ignoreUnknownKeys = true }
+
+    fun fetchText(it: String) = restService.fetch(
+        "https://borgnetzwerk.miraheze.org/w/api.php?",
+        mapOf(
+            "action" to "parse",
+            "prop" to "wikitext",
+            "pageid" to it,
+            "format" to "json"
+        ),
+        HttpEntity<String>(HttpHeaders().apply {
+            set(HttpHeaders.ACCEPT, "application/json")
+        })
+    )?.let { response ->
+        try {
+            val parsed = json.decodeFromString<MirahezeObject>(response).parse
+            Text(
+                id = parsed.pageid.toString(),
+                text = parsed.wikitext.text
+            )
+        } catch (ex: Exception) {
+            null
+        }
+    }
+}
+
+data class Text(
+    val id: String,
+    val text: String
+)
+
+@Serializable
+data class MirahezeObject(
+    val parse: MirahezeParse
+)
+
+@Serializable
+data class Wikitext(
+    val text: String,
+)
+
+@Serializable
+data class MirahezeParse(
+    val pageid: Int,
+    val title: String,
+    @Serializable(with = WikitextTransformer::class)
+    val wikitext: Wikitext
+)
+
+object WikitextTransformer : JsonTransformingSerializer<Wikitext>(Wikitext.serializer()) {
+    override fun transformDeserialize(element: JsonElement): JsonElement {
+        return when (element) {
+            is JsonObject -> buildJsonObject {
+                element.forEach { (key, value) ->
+                    when (key) {
+                        "*" -> put("text", value)
+                        else -> put(key, value)
+                    }
+                }
+            }
+            else -> element
+        }
+    }
 }
 
 
@@ -180,6 +250,11 @@ class WebService {
     @Bean
     fun restFetchService(): RESTService {
         return RESTService()
+    }
+
+    @Bean
+    fun fetchTextService(): QueryMiraheze {
+        return QueryMiraheze()
     }
 
 }

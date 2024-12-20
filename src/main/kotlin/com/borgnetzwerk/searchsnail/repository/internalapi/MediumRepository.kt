@@ -21,6 +21,7 @@ data class MediumRepository(
 ) : IMedium {
 
     val webClient = webService.sparqlQueryService()
+    val textClient = webService.fetchTextService()
 
     val item = Namespace.ITEM
     val propt = Namespace.PROPT
@@ -35,6 +36,7 @@ data class MediumRepository(
     val thumbnail = Var("thumbnail")
     val categories = Var("categories")
     val duration = Var("duration")
+    val captionId = Var("captionId")
 
     val subtitleLanguageList = Var("subtitleLanguageList")
     val subtitleLanguages = Var("subtitleLanguages")
@@ -63,7 +65,8 @@ data class MediumRepository(
             propt("P6") to Var("publication"),
             propt("P7") to thumbnail,
             propt("P4") to BlankNodeTail(rdfs("label"), categories),
-            propt("P26") to duration
+            propt("P26") to duration,
+            propt("P29") to captionId,
         )
 
         val gp = GraphPattern().add(
@@ -82,6 +85,7 @@ data class MediumRepository(
             thumbnail,
             categories,
             duration,
+            captionId,
             Aggregation("(STR(?publication) AS $publicationDate)")
         ).where(gp)
 
@@ -196,7 +200,8 @@ data class MediumRepository(
             id = id,
             type = mainResponse.type?.value,
             title = mainResponse.title.value,
-            caption = null,
+            caption = mainResponse.captionId?.let { it -> textClient.fetchText(it.value)
+                ?.let { it1 -> Caption(it1.text, it1.id) } },
             publication = mainResponse.publicationDate?.value?.split("T")?.first()?.let { LocalDate.parse(it) },
             channel = if (referencesResponse.channel?.value !== null && referencesResponse.channelName?.value !== null) WikiDataResource(
                 referencesResponse.channel.value,
@@ -231,6 +236,7 @@ data class MainQueryRow(
     @Serializable(with = WikidataObjectTransformer::class)
     val categories: WikidataObject? = null,
     val duration: WikidataObject? = null,
+    val captionId: WikidataObject? = null
 )
 
 @Serializable

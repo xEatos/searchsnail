@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service
 
 @Service
 class YoutubeService (
-    val youTubeRepo: YouTube
+    private val youTubeRepo: YouTube
 ){
-    fun get(ids: List<VideoId>): List<YouTubeVideoData> = youTubeRepo.get(ids)
+    fun get(key: String, ids: List<VideoId>): List<YouTubeVideoData> = youTubeRepo.get(key, ids)
 }

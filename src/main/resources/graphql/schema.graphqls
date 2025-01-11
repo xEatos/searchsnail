@@ -3,6 +3,7 @@ type Query {
     filterOptions: [FilterOption!]!
     medium(mediumId: ID!): Medium
     transcriptChapters(transcriptIds: [ID!]!): [TranscriptText!]
+    getYouTubeVideosData(key: String!, watchIds: [ID!]): [LeanMedium!]
 }
 
 type Mutation {

@@ -58,13 +58,15 @@ class QueryServiceDispatcher {
 }
 
 // https://youtube.googleapis.com/youtube/v3/videos?part=snippet&part=statistics&id=NHHUef7mrfY&key=AIzaSyBDb9q9lMnzeIbNauMLhCN2Gn1HHITRxo4
-class YoutubeVideoDataService(val key: String) {
+class YoutubeVideoDataService() {
     val restTemplate = RestTemplate()
 
     val baseUrl = URL("https://youtube.googleapis.com/youtube/v3").toString()
 
 
     val json = Json() { ignoreUnknownKeys = true } // make a @Component of it
+
+    private var key = ""
 
     private val headers = HttpHeaders().apply {
         contentType = MediaType.APPLICATION_JSON
@@ -86,6 +88,7 @@ class YoutubeVideoDataService(val key: String) {
         return json.decodeFromString<JSONYouTubeVideoData>(response ?: "")
     }
 
+    fun setKey(key: String) {this.key = key}
 
 }
 
@@ -244,7 +247,7 @@ class WebService {
 
     @Bean
     fun youTubeQueryService(): YoutubeVideoDataService {
-        return YoutubeVideoDataService(key.key)
+        return YoutubeVideoDataService()
     }
 
     @Bean

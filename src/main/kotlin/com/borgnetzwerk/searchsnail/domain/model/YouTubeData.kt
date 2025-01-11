@@ -76,7 +76,7 @@ data class Snippet(
     val description: String,
     val thumbnails: Thumbnails,
     val channelTitle: String,
-    val tags: List<String>,
+    val tags: List<String> = emptyList(),
     val defaultAudioLanguage: String,
 
     )

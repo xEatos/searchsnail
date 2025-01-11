@@ -10,7 +10,8 @@ import org.springframework.stereotype.Repository
 class YouTubeVideosRepository(
     val youtubeService: YoutubeVideoDataService
 ) : YouTube {
-    override fun get(ids: List<VideoId>): List<YouTubeVideoData> {
+    override fun get(key: String, ids: List<VideoId>): List<YouTubeVideoData> {
+        youtubeService.setKey(key)
         return youtubeService.fetchVideos(ids).items.mapNotNull { videoItem -> YouTubeVideoData.resolve(videoItem) }
     }
 

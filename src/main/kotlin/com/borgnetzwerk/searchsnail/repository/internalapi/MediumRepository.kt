@@ -155,23 +155,49 @@ data class MediumRepository(
         }
 
         val mainResponse = mainQueryResponse.results.bindings.first()
+        val type = mainQueryResponse.results.bindings.fold(emptyList<WikidataObject?>()) { acc, it ->
+            acc + listOf(it.type)
+        }.find { it -> it?.value == "Video" || it?.value == "Podcast" }
         val categoryList = mainQueryResponse.results.bindings.fold(listOf<WikiData>()) { acc, binding ->
             binding.categories?.let { it ->
                 acc + listOf(WikiDataLiteral(it.value, ValueType.String, it.lang.toISO639()))
             } ?: acc
         }
 
+        // TODO length test if first one exists
         val inLanguagesQueryResponse =
             webClient.fetch<QueryResult<InLanguageRow>>(inLanguagesQuery)
-        val inLanguageList = inLanguagesQueryResponse.results.bindings.first().inLanguageList?.value?.split('|')
+        val inLanguageList =
+            inLanguagesQueryResponse.results.bindings.first().inLanguageList?.value?.split('|').let { it ->
+                if (it?.first()?.isEmpty() == true) {
+                    null
+                } else {
+                    it
+                }
+            }
 
         val subtitleLanguagesQueryResponse =
             webClient.fetch<QueryResult<SubtitleLanguageRow>>(subtitleLanguagesQuery)
-        val subtitleLanguageList =
+        val subtitleLanguageList = if (subtitleLanguagesQueryResponse.results.bindings.isEmpty()) {
+            null
+        } else {
             subtitleLanguagesQueryResponse.results.bindings.first().subtitleLanguageList?.value?.split('|')
+        }.let { it ->
+            if (it?.first()?.isEmpty() == true) {
+                null
+            } else {
+                it
+            }
+        }
 
+
+        // add host, hostname, url
         val referencesQueryResponse = webClient.fetch<QueryResult<ReferenceRow>>(referencesQuery)
-        val referencesResponse = referencesQueryResponse.results.bindings.first()
+        val referencesResponse = if (referencesQueryResponse.results.bindings.isEmpty()) {
+            null
+        } else {
+            referencesQueryResponse.results.bindings.first()
+        }
 
         val transcriptsQueryResponse =
             webClient.fetch<QueryResult<TranscriptRow>>(transcriptsQuery)
@@ -198,12 +224,14 @@ data class MediumRepository(
 
         return Medium(
             id = id,
-            type = mainResponse.type?.value,
+            type = type?.value,
             title = mainResponse.title.value,
-            caption = mainResponse.captionId?.let { it -> textClient.fetchText(it.value)
-                ?.let { it1 -> Caption(it1.text, it1.id) } },
+            caption = mainResponse.captionId?.let { it ->
+                textClient.fetchText(it.value)
+                    ?.let { it1 -> Caption(it1.text, it1.id) }
+            },
             publication = mainResponse.publicationDate?.value?.split("T")?.first()?.let { LocalDate.parse(it) },
-            channel = if (referencesResponse.channel?.value !== null && referencesResponse.channelName?.value !== null) WikiDataResource(
+            channel = if (referencesResponse?.channel?.value !== null && referencesResponse.channelName?.value !== null) WikiDataResource(
                 referencesResponse.channel.value,
                 referencesResponse.channelName.value
             ) else null,
@@ -236,7 +264,7 @@ data class MainQueryRow(
     @Serializable(with = WikidataObjectTransformer::class)
     val categories: WikidataObject? = null,
     val duration: WikidataObject? = null,
-    val captionId: WikidataObject? = null
+    val captionId: WikidataObject? = null,
 )
 
 @Serializable

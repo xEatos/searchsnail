@@ -11,7 +11,7 @@ import org.junit.platform.commons.annotation.Testable
 class YouTubeVideoDataServiceTest : DescribeSpec({
     describe("YoutubeVideoDataServiceTest") {
         it("should return a snippet"){
-            val youtubeService = WebService().youTubeQueryService()
+            val youtubeService = WebService().youTubeQueryService("as")
             try {
                 val response = youtubeService.fetchVideos(listOf(VideoId("NHHUef7mrfY"), VideoId("kHd_cx1XdYk")))
                 println(response.items.map { it -> YouTubeVideoData.resolve(it)?.chapters })

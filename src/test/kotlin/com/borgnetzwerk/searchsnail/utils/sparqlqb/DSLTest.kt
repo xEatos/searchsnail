@@ -17,10 +17,10 @@ class DSLTest : DescribeSpec({
 
           SELECT ?channelName ?name ?start ?end ?pageid
           WHERE {
-            ?media propt:P1 item:Q5 ;
-                rdfs:label ?channelName ;
-                propt:P24 / prop:P20 ?sectionStatements  .
-            ?sectionStatements pstat:P20 ?name ;
+            ?media propt:P1 / propt:P9 item:Q5 ;
+         rdfs:label ?channelName ;
+         propt:P24 / prop:P20 ?sectionStatements  .
+?sectionStatements pstat:P20 ?name ;
                 pqual:P18 ?start ;
                 pqual:P19 ?end ;
                 pqual:P23 ?index .

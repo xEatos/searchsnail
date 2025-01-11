@@ -6,7 +6,7 @@ import java.time.Duration
 data class MediumDuration private constructor(val value: Int) {
     companion object {
         fun of(duration: Int): MediumDuration? =
-            if (duration <= 0) {
+            if (duration < 0) {
                 null
             } else {
                 MediumDuration(duration)

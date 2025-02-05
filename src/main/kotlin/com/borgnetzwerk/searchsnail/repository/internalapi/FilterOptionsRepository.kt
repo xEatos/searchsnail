@@ -19,6 +19,7 @@ class FilterOptionsRepository(
 
     override fun getFilterOptionById(filterId: ResolvedFilterId): FilterOption? {
         return when (filterId.value) {
+            is FreeText -> FilterOption(filterId, FilterType.TextInput, "Search by Text", listOf(WikiDataLiteral("", ValueType.String, null)), "Search")
             is MediumTyp -> FilterOption(filterId, FilterType.LabelSearch, "Medium", getMediumTypOptions(), "Media")
             is MinDate -> FilterOption(filterId, FilterType.Datepicker, "From", getMinDateOptions(), "Date Range")
             is MaxDate -> FilterOption(filterId, FilterType.Datepicker, "To", getMaxDateOptions(), "Date Range")
@@ -81,6 +82,7 @@ class FilterOptionsRepository(
                         BasicGraphPattern(entity, predicate, variable)
                     )
             )
+        println(dsl.build())
         return webClient.fetch<QueryResult<LiteralRow>>(dsl).results.bindings.mapNotNull { row ->
             when (row.entityLabel.type) {
                 "literal" -> WikiDataLiteral(row.entityLabel.value, type, row.entityLabel.lang?.let { ISO639(it) })
@@ -111,13 +113,14 @@ class FilterOptionsRepository(
 
     private fun getAggDurationOptions(agg: String): List<WikiData> {
         val dsl = DSL()
-            .select(Aggregation("($agg(?durationInSec) AS $entityLabel)"))
+            .select(Aggregation("($agg(xsd:integer(?durationInSec)) AS $entityLabel)"))
             .where(
                 GraphPattern()
                     .add(
                         BasicGraphPattern(entity, Namespace.PROPT("P26"), Var("durationInSec"))
                     )
             )
+        println(dsl.build())
         return webClient.fetch<QueryResult<LiteralRow>>(dsl).results.bindings.mapNotNull { row ->
             when (row.entityLabel.type) {
                 "literal" -> WikiDataLiteral(row.entityLabel.value, ValueType.Duration, null)

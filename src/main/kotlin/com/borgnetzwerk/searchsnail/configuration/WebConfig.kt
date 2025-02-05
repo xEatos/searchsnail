@@ -35,15 +35,15 @@ class QueryServiceDispatcher {
 
     final inline fun <reified T> fetch(query: DSL): T {
         val queryStr = query.build()
-        println(createEntity(queryStr))
-        println(queryStr)
+        //println(createEntity(queryStr))
+        //println(queryStr)
         try {
             val response = restTemplate.exchange<String>(
                 url,
                 HttpMethod.POST,
                 createEntity(queryStr)
             ).body
-            println(response)
+            //println(response)
             return json.decodeFromString<T>(response ?: "")
         } catch (e: Exception) {
             println(e.message)

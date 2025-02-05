@@ -14,6 +14,7 @@ data class ResolvedFilterId private constructor(val value: FilterId) {
         fun create(value: FilterId): ResolvedFilterId = ResolvedFilterId(value)
 
         private val ids = mapOf(
+            FreeText.toString() to FreeText,
             MediumTyp.toString() to MediumTyp,
             MinDate.toString() to MinDate,
             MaxDate.toString() to MaxDate,

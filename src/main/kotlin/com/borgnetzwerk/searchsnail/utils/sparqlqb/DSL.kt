@@ -91,6 +91,14 @@ data class IRI(val namespace: Namespace?, val relativePart: String) : Term {
     } else {
         "<$relativePart>".padStart(tabSpaces * depth, ' ')
     }
+
+    fun getFullIRI(): String{
+        return if (namespace != null) {
+            "${namespace.localPart}$relativePart"
+        } else {
+            relativePart
+        }
+    }
 }
 
 // "23"^^xsd:integer, "hello world", TODO: "Hallo Welt"@de
@@ -538,7 +546,7 @@ class DSL() {
 
     fun build() = listOf(
         prefixes.joinToString("\n", postfix = "\n") { prefix -> "PREFIX ${prefix.prefix}: <${prefix.localPart}>" },
-        vars?.joinToString(" ", prefix = "SELECT " + this.distinct, postfix = "\n") ?: "",
+        vars?.joinToString(" ", prefix = "SELECT " + "${this.distinct} ", postfix = " \n") ?: "",
         gp?.let { "WHERE {\n${it}\n}\n" } ?: "",
         orderBy?.let { "ORDER BY $it\n" } ?: "",
         limit?.let { "LIMIT $it\n" } ?: "",

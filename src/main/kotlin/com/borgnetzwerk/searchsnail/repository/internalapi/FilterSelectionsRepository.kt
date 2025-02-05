@@ -183,7 +183,7 @@ class DurationFilter(val selections: List<WikiData>) : SelectionQueryPattern {
         val duration = Var("duration")
         val bgp = BasicGraphPattern(Var("media"), Namespace.PROPT("P26"), duration)
         return if (selections.size == 2) {
-            Pair(listOf(bgp), listOf("${selections[0].tryInjectLiteral { "\"${it.value}\"" }} <= $duration && $duration <= ${selections[1].tryInjectLiteral { "\"${it.value}\"" }}"))
+            Pair(listOf(bgp), listOf("${selections[0].tryInjectLiteral { it.value }} <= xsd:integer($duration) && xsd:integer($duration) <= ${selections[1].tryInjectLiteral { it.value }}"))
         } else {
             empty()
         }
@@ -203,7 +203,7 @@ class SubtitleLanguageFilter(val selections: List<WikiData>): SelectionQueryPatt
         val subtitleLang = Var("subtitleLang")
         val bgp = BasicGraphPattern(Var("media"), Namespace.PROPT("P25"), subtitleLang)
         val filter = selections.mapNotNull { wikidata ->
-            wikidata.tryInjectLiteral { resource -> " $subtitleLang = <${resource.value}> " }
+            wikidata.tryInjectLiteral { literal -> " $subtitleLang = \"${literal.value}\"" }
         }.joinToString(separator = "||")
         return if (filter.isNotEmpty()) {
             Pair(listOf(bgp), listOf(filter))

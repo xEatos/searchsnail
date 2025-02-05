@@ -12,7 +12,7 @@ data class FilterQueryPattern(
 
 data class FilterSelection(
     val filterId: ResolvedFilterId,
-    val selections: List<WikiData>,
+    val selections: MutableList<WikiData>,
 )
 
 

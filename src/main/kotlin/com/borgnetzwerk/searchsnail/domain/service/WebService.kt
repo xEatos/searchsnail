@@ -16,6 +16,7 @@ import org.springframework.http.MediaType
 import org.springframework.http.client.ClientHttpRequest
 import org.springframework.http.client.SimpleClientHttpRequestFactory
 import org.springframework.stereotype.Component
+import org.springframework.stereotype.Service
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.client.exchange
 import java.io.BufferedReader
@@ -46,13 +47,13 @@ class QueryServiceDispatcher {
 
     final inline fun <reified T> fetch(query: DSL): T {
         val queryStr = query.build()
-        println(queryStr)
+        //println(queryStr)
         val response = restTemplate.exchange<String>(
             url,
             HttpMethod.POST,
             createEntity(queryStr)
         ).body
-        println(response)
+        //println(response)
         return json.decodeFromString<T>(response ?: "")
     }
 }
@@ -160,6 +161,23 @@ object WikitextTransformer : JsonTransformingSerializer<Wikitext>(Wikitext.seria
     }
 }
 
+@Service
+class GenericFetchService{
+    val restTemplate = RestTemplate()
+
+    val json = Json() { ignoreUnknownKeys = true }
+
+    final inline fun <reified T> fetch(url: URL, httpMethod: HttpMethod = HttpMethod.GET, httpEntity: HttpEntity<String>? = null): T {
+
+        val response = restTemplate.exchange<String>(
+            url.toString(),
+            httpMethod,
+            httpEntity
+        ).body
+        println("response: $response")
+        return json.decodeFromString<T>(response ?: "")
+    }
+}
 
 // TODO encode it back
 class RESTService {

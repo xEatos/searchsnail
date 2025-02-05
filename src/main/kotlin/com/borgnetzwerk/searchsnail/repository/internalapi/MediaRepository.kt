@@ -15,7 +15,7 @@ import java.time.LocalDate
 @Repository
 class MediaRepository(
     @Autowired
-    val webClient: QueryServiceDispatcher
+    val webClient: QueryServiceDispatcher,
 ) : Media {
 
     val item = Namespace.ITEM
@@ -38,7 +38,7 @@ class MediaRepository(
 
         gp.add(
             BasicGraphPattern(media, rdfs("label"), title)
-                .add(listOf(propt("P1"), rdfs("label")) , mediaType )
+                .add(listOf(propt("P1"), rdfs("label")), mediaType)
                 .add(propt("P7"), thumbnail)
                 .add(propt("P26"), duration)
                 .add(propt("P6"), publication)
@@ -49,19 +49,65 @@ class MediaRepository(
             gp.add(bgp)
         }
 
-        queryPattern.filterStrings.forEach{filter ->
+        queryPattern.filterStrings.forEach { filter ->
             gp.addFilter(filter)
         }
 
         return DSL()
             .isDistinct()
-            .select(media, mediaType, title, channel, thumbnail, duration, Aggregation("(STR(?publication) AS ?isoDate)"))
+            .select(
+                media,
+                mediaType,
+                title,
+                channel,
+                thumbnail,
+                duration,
+                Aggregation("(STR(?publication) AS ?isoDate)")
+            )
             .where(gp)
             .orderBy("ASC($title)")
             .limit(first)
             .offset(after?.toInt() ?: 0).let { it ->
                 println(it.build())
-                it }
+                it
+            }
+    }
+
+    private fun getFilterIRIsQuery(iris: List<IRI>, queryPattern: FilterQueryPattern): DSL {
+        val gp = GraphPattern()
+
+        gp.addValues(media, iris.map { it -> IRI(it.getFullIRI()) })
+
+        gp.add(
+            BasicGraphPattern(media, rdfs("label"), title)
+                .add(listOf(propt("P1"), rdfs("label")), mediaType)
+                .add(propt("P7"), thumbnail)
+                .add(propt("P26"), duration)
+                .add(propt("P6"), publication)
+                .add(listOf(prop("P10"), pqual("P28"), rdfs("label")), channel)
+        )
+
+        queryPattern.bgps.forEach { bgp ->
+            gp.add(bgp)
+        }
+
+        queryPattern.filterStrings.forEach { filter ->
+            gp.addFilter(filter)
+        }
+
+        return DSL()
+            .isDistinct()
+            .select(
+                media,
+                mediaType,
+                title,
+                channel,
+                thumbnail,
+                duration,
+                Aggregation("(STR(?publication) AS ?isoDate)")
+            )
+            .where(gp)
+            .orderBy("ASC($title)")
     }
 
     override fun getMedia(first: Int, after: String?, queryPattern: FilterQueryPattern): List<LeanMedium> = webClient
@@ -77,6 +123,24 @@ class MediaRepository(
                 row.duration.value.toInt(),
             )
         }
+
+    override fun filterIRIs(iris: List<IRI>, queryPattern: FilterQueryPattern): List<LeanMedium> {
+        val res = webClient
+            .fetch<QueryResult<Row>>(getFilterIRIsQuery(iris, queryPattern))
+            .results.bindings.map { row ->
+                LeanMedium(
+                    MediumId(row.media.value),
+                    row.mediaType.value,
+                    row.mediaName.value,
+                    LocalDate.parse(row.isoDate.value.split("T").first()),
+                    row.channel.value,
+                    UnresolvedThumbnail(URL(row.thumbnail.value)).resolve(),
+                    row.duration.value.toInt(),
+                )
+            }
+        return res
+    }
+
 }
 
 @Serializable

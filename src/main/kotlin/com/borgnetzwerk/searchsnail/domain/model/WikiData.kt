@@ -20,13 +20,21 @@ sealed class WikiData
 class WikiDataResource(
     val iri: String,
     val label: String,
-) : WikiData()
+) : WikiData(){
+    override fun toString(): String {
+        return "$iri: $label"
+    }
+}
 
 class WikiDataLiteral(
     val value: String,
     val type: ValueType,
     val lang: ISO639?,
-) : WikiData()
+) : WikiData(){
+    override fun toString(): String {
+        return "$value^^$type@${lang ?: ""}"
+    }
+}
 
 
 fun <T> WikiData.tryInjectResource(callBack: (wr: WikiDataResource) -> T): T? =

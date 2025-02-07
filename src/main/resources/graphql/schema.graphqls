@@ -1,5 +1,5 @@
 type Query {
-    mediaConnections(first: Int!, after: String, filter: [FilterSelectionInput!]): MediumConnection
+    mediaConnections(first: Int!, after: WikiBatchAfter!, filter: [FilterSelectionInput!]): MediumConnection
     filterOptions: [FilterOption!]!
     medium(mediumId: ID!): Medium
     transcriptChapters(transcriptIds: [ID!]!): [TranscriptText!]
@@ -109,13 +109,50 @@ type MediumConnection {
 type PageInfo {
     hasPreviousPage: Boolean!
     hasNextPage: Boolean!
-    startCursor: String
-    endCursor: String
+    batchInfo: WikiBatchInfo
+    boxInfo: BoxInfo
 }
 
 type MediumEdge {
     cursor: String!
     node: LeanMedium!
+}
+
+type WikiBatchInfo {
+    wikibase: WikiBatchContinue!
+    miraheze: WikiBatchContinue!
+    sparql: WikiBatchContinue!
+}
+
+type WikiBatchContinue {
+    """exclusive global index, list of videos returned by MediaConnection includes videos after startOffset """
+    startOffset: Int!
+    """Global index of last video return by MediaConnection"""
+    endOffset: Int!
+    """Is there still videos after endOffset"""
+    continue: Boolean!
+}
+
+"""
+can only be used for pagination forward
+- we can only jump from page to page, multiple jumps at once possible -> increase Limit by each skipped page
+for backwards pagination cache earlier forwards
+if filters or text changes reset After
+"""
+input WikiBatchAfter {
+    wikibase: Int!
+    miraheze: Int!
+    sparql: Int!
+}
+
+type FilterSelection {
+    """ e.g. minDate, language """
+    filterId: String!
+    data: [WikiData!]!
+}
+
+type BoxInfo {
+    filtersFoundByText: [FilterSelection!]
 }
 
 enum ValueType {

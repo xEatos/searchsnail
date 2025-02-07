@@ -50,7 +50,7 @@ class TextSearchWikibaseService(
             .mapIndexed { index, it ->
                 IriWithMetadata(
                     Namespace.ITEM(it.title.split(':')[1]),
-                    mutableMapOf("index" to index.toString(), "origin" to "Wikibase")
+                    mutableMapOf("index" to (index + offset).toString(), "origin" to "wikibase")
                 )
             }.associateBy({ it -> it.iri.getFullIRI() }, { it })
 
@@ -117,8 +117,8 @@ class TextSearchWikibaseService(
         )
     }
 
-    fun getBatch(searchText: String, _sroffset: Int): TextSearchWikibaseAnswer {
-        val limit = 50
+    fun getBatch(searchText: String, _sroffset: Int, first: Int): TextSearchWikibaseAnswer {
+        val limit = first
         var sroffset = _sroffset
         val irisBatch = mutableListOf<IriWithMetadata>()
         val fsBatch = mutableListOf<FilterSelection>()
@@ -142,7 +142,7 @@ class TextSearchWikibaseService(
             searchText,
             irisBatch.slice(IntRange(0, limit - 1)),
             fsBatch,
-            BatchContinueInfo(sroffset - limit + irisBatch[limit - 1].getMetadata("index")?.toInt()!! + 1, "")
+            BatchContinueInfo(irisBatch.slice(IntRange(0, limit - 1)).lastOrNull()?.getMetadata("index")?.toInt() ?: sroffset, "")
         )
     }
 

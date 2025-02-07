@@ -11,14 +11,14 @@ import org.springframework.stereotype.Controller
 @Controller
 class MediaController(
     val mediaService: MediaService,
-    val searchStrategyResolver: SearchStrategyResolver
+    val searchStrategyResolver: SearchStrategyResolver,
 ) {
 
     @QueryMapping
     fun mediaConnections(
         @Argument first: Int,
-        @Argument after: String?,
-        @Argument filter: List<FilterSelectionGraphQL>?
+        @Argument after: WikiBatchAfterQL,
+        @Argument filter: List<FilterSelectionGraphQL>?,
     ): ConnectionGraphQL<LeanMediumGraphQL> {
         val filterSelections = filter?.mapNotNull { f ->
             UnresolvedFilterId(f.filterId).resolve()?.let { resolvedFilterId ->
@@ -36,26 +36,33 @@ class MediaController(
             }
         }
 
-        println("input - filter: $filter")
-        println("input - filter: $filterSelections")
-
-
         return searchStrategyResolver.getMedia(first + 1, after, filterSelections ?: emptyList()).let {
             println(it)
-            it
-        }.media.map { medium ->
-                LeanMediumGraphQL(
-                    id = medium.id.value,
-                    type = medium.type,
-                    title = medium.title,
-                    publication = medium.publication.toString(),
-                    channel = medium.channel,
-                    thumbnail = medium.thumbnail?.url.toString(),
-                    duration = medium.duration
+            ConnectionGraphQL(
+                edges = it.media.map { medium ->
+                    EdgeGraphQL(
+                        LeanMediumGraphQL(
+                            id = medium.id.value,
+                            type = medium.type,
+                            title = medium.title,
+                            publication = medium.publication.toString(),
+                            channel = medium.channel,
+                            thumbnail = medium.thumbnail?.url.toString(),
+                            duration = medium.duration
+                        ), 0 // TODO
+                    )
+                },
+                pageInfo = PageInfoGraphQL(
+                    hasPreviousPage = it.batchInfoWikibase.startOffset > -1
+                            || it.batchInfoMiraheze.startOffset > -1
+                            || it.batchInfoWikibase.startOffset > -1,
+                    hasNextPage = it.batchInfoWikibase.canContinue || it.batchInfoMiraheze.canContinue || it.batchInfoSparql.canContinue,
+                    boxInfo = it.boxInfo,
+                    batchInfo = it.batchInfo
+
                 )
-        }.let { list ->
-            ConnectionGraphQL.resolve(list, first, after, 1)
-        }!!
+            )
+        }
     }
 
 }

@@ -88,8 +88,8 @@ class TextSearchMirahezeService(
         )
     }
 
-    fun getBatch(searchText: String, _sroffset: Int): TextSearchMirahezeAnswer{
-        val limit = 50
+    fun getBatch(searchText: String, _sroffset: Int, first: Int): TextSearchMirahezeAnswer{
+        val limit = first
         var sroffset = _sroffset
         val irisBatch = mutableListOf<IriWithMetadata>()
         do {
@@ -109,7 +109,7 @@ class TextSearchMirahezeService(
         return TextSearchMirahezeAnswer(
             searchText,
             irisBatch.slice(IntRange(0, limit +1)),
-            BatchContinueInfo(sroffset - limit + irisBatch[limit].getMetadata("index")?.toInt()!!, "")
+            BatchContinueInfo(irisBatch.slice(IntRange(0, limit - 1)).lastOrNull()?.getMetadata("index")?.toInt() ?: sroffset, "")
         )
     }
 

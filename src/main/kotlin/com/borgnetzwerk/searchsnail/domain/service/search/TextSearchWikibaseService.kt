@@ -3,7 +3,10 @@ package com.borgnetzwerk.searchsnail.domain.service.search
 import com.borgnetzwerk.searchsnail.domain.model.*
 import com.borgnetzwerk.searchsnail.domain.service.GenericFetchService
 import com.borgnetzwerk.searchsnail.domain.service.QueryServiceDispatcher
-import com.borgnetzwerk.searchsnail.repository.internalapi.ChannelFilter
+import com.borgnetzwerk.searchsnail.repository.model.IndexedElement
+import com.borgnetzwerk.searchsnail.repository.model.IndexedPage
+import com.borgnetzwerk.searchsnail.repository.model.Page
+import com.borgnetzwerk.searchsnail.repository.model.PageMap
 import com.borgnetzwerk.searchsnail.repository.serialization.QueryResult
 import com.borgnetzwerk.searchsnail.repository.serialization.WikidataObject
 import com.borgnetzwerk.searchsnail.repository.serialization.WikidataObjectTransformer
@@ -12,6 +15,13 @@ import kotlinx.serialization.Serializable
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import java.net.URL
+
+
+data class IRIwithType(
+    val iri: IRI,
+    val label: String,
+    val type: IRI,
+)
 
 @Service
 class TextSearchWikibaseService(
@@ -35,6 +45,136 @@ class TextSearchWikibaseService(
             "&srinfo=totalhits|suggestion|rewrittenquery" +
             "&srprop=" +
             "&srenablerewrites=1"
+
+
+    fun getPage(searchText: String, offset: Int, limit: Int): Page<IRI> = apiFetchService
+        .fetch<BatchInfo>(URL(generateURL(searchText, offset + 1 /* sroffset is inclusive */, limit)))
+        .let { batchInfo ->
+            Page(
+                offset = offset,
+                total = batchInfo.query.searchinfo.totalhits,
+                elements = batchInfo.query.search.map { IRI(Namespace.ITEM(it.title.split(':')[1]).getFullIRI()) },
+                hasNextPage = batchInfo.`continue` !== null,
+                hasPreviousPage = offset > -1
+            )
+        }
+
+
+    fun getIndexedPageAndFilters(
+        searchText: String,
+        offset: Int,
+        limit: Int,
+    ): Pair<IndexedPage<String>, List<FilterSelection>> = apiFetchService
+        .fetch<BatchInfo>(URL(generateURL(searchText, offset + 1 /* sroffset is inclusive */, limit))).run {
+            query.search.mapIndexed { index, it ->
+                IndexedElement(
+                    offset + index + 1,
+                    Namespace.ITEM(it.title.split(':')[1]).getFullIRI(),
+                    "wikibase"
+                )
+            }.let { indexedIriStrings ->
+                getIRIsWithType(indexedIriStrings.map { IRI(it.value) }).let { irisWithType ->
+                    indexedIriStrings.map { indexedElement ->
+                        irisWithType.find { iriWithType -> iriWithType.iri.getFullIRI() == indexedElement.value }
+                            ?.let { found ->
+                                IndexedElement(indexedElement.index, found, indexedElement.provenance)
+                            }
+                    }
+                }
+            }.run {
+                Pair(
+                    IndexedPage(
+                        filter { it != null && it.value.toFilterSelection() == null }
+                            .mapNotNull { it ->
+                                it?.let { IndexedElement(it.index, it.value.iri.getFullIRI(), it.provenance) }
+                            },
+                        hasNextPage = `continue` !== null,
+                        hasPreviousPage = offset > -1,
+                        offset = offset,
+                        limit = limit
+                    ),
+                    filter { it != null && it.value.toFilterSelection() != null }
+                        .mapNotNull { it?.value?.toFilterSelection() }
+                )
+            }
+        }
+
+    fun getNextIndexedPageAndFilters(searchText: String, limit: Int, indexedPage: IndexedPage<String>): Pair<IndexedPage<String>, List<FilterSelection>>? =
+        if(indexedPage.hasNextPage){
+            if(indexedPage.elements.isNotEmpty()){
+                getIndexedPageAndFilters(searchText, indexedPage.elements.last().index, limit)
+            } else {
+                getIndexedPageAndFilters(searchText, indexedPage.offset + indexedPage.limit, limit)
+            }
+        } else {
+            null
+        }
+
+
+
+    fun getMediaPageAndFilters(
+        searchText: String,
+        offset: Int,
+        limit: Int,
+    ): Pair<PageMap<String, IRI>, List<FilterSelection>> {
+        val wikibasePage = getPage(searchText, offset, limit).toPageMap("wikibase") { it -> it.getFullIRI() }
+        val irisWithTypeMap = getLabelAndTypeOfIRIs(wikibasePage.page.keys.map { IRI(it) }).associate { it ->
+            Pair(it.iri.getFullIRI(), it)
+        }
+
+        return Pair(
+            wikibasePage.filterByKey { key ->
+                irisWithTypeMap[key]?.let { iriWithType -> iriWithType.toFilterSelection() == null } ?: true
+            },
+            irisWithTypeMap.values.filter { it.toFilterSelection() != null }
+                .mapNotNull { it -> it.toFilterSelection() })
+    }
+
+
+    private fun IRIwithType.toFilterSelection(): FilterSelection? =
+        when (type?.getFullIRI()) {
+            Namespace.ITEM("Q3").getFullIRI() -> ResolvedFilterId.create(Channel)
+            Namespace.ITEM("Q7").getFullIRI() -> ResolvedFilterId.create(Platform)
+            Namespace.ITEM("Q10").getFullIRI() -> ResolvedFilterId.create(Category)
+            else -> null
+        }?.let { resolvedFilterId ->
+            FilterSelection(
+                ResolvedFilterId.create(resolvedFilterId.value),
+                mutableListOf(WikiDataResource(iri.getFullIRI(), label ?: "<empty>"))
+            )
+        }
+
+    fun getIRIsWithType(entities: List<IRI>): List<IRIwithType> = sparqlQueryService
+        .fetch<QueryResult<EntityRow>>(getTypesOfIRIsDSL(entities))
+        .results
+        .bindings.map { it -> IRIwithType(IRI(it.entity.value), it.entityLabel.value, IRI(it.entityType.value)) }
+
+    fun getLabelAndTypeOfIRIs(entities: List<IRI>): List<IRIwithType> {
+        return sparqlQueryService.fetch<QueryResult<EntityRow>>(getTypesOfIRIsDSL(entities)).results.bindings.let { bindings ->
+            entities.map { entity ->
+                bindings.find { row -> row.entity.value == entity.getFullIRI() }?.let { foundrow ->
+                    IRIwithType(entity, foundrow.entityLabel.value, IRI(foundrow.entityType.value))
+                } ?: IRIwithType(entity, "", IRI(""))
+            }
+        }
+    }
+
+    private fun getTypesOfIRIsDSL(iris: List<IRI>): DSL {
+        val entityVar = Var("entity")
+        val entityTypeVar = Var("entityType")
+        val entityLabelVar = Var("entityLabel")
+
+        return DSL()
+            .select(entityVar, entityTypeVar, entityLabelVar)
+            .where(
+                GraphPattern()
+                    .addValues(entityVar, iris)
+                    .add(
+                        BasicGraphPattern(entityVar, Namespace.PROPT("P1"), entityTypeVar)
+                            .add(Namespace.RDFS("label"), entityLabelVar)
+                    )
+            )
+    }
 
     private fun get(
         searchText: String,
@@ -142,7 +282,9 @@ class TextSearchWikibaseService(
             searchText,
             irisBatch.slice(IntRange(0, limit - 1)),
             fsBatch,
-            BatchContinueInfo(irisBatch.slice(IntRange(0, limit - 1)).lastOrNull()?.getMetadata("index")?.toInt() ?: sroffset, "")
+            BatchContinueInfo(
+                irisBatch.slice(IntRange(0, limit - 1)).lastOrNull()?.getMetadata("index")?.toInt() ?: sroffset, ""
+            )
         )
     }
 
@@ -153,6 +295,7 @@ class TextSearchWikibaseService(
         @Serializable(with = WikidataObjectTransformer::class)
         val entityLabel: WikidataObject,
     )
+
 
 }
 

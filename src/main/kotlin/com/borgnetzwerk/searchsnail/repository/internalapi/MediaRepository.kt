@@ -1,6 +1,6 @@
 package com.borgnetzwerk.searchsnail.repository.internalapi
 
-import com.borgnetzwerk.searchsnail.configuration.QueryServiceDispatcher
+import com.borgnetzwerk.searchsnail.domain.service.QueryServiceDispatcher
 import com.borgnetzwerk.searchsnail.domain.model.*
 import com.borgnetzwerk.searchsnail.domain.service.media.Media
 import com.borgnetzwerk.searchsnail.repository.serialization.*

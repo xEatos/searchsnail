@@ -53,10 +53,10 @@ class MediaController(
                     )
                 },
                 pageInfo = PageInfoGraphQL(
-                    hasPreviousPage = it.batchInfoWikibase.startOffset > -1
-                            || it.batchInfoMiraheze.startOffset > -1
-                            || it.batchInfoWikibase.startOffset > -1,
-                    hasNextPage = it.batchInfoWikibase.canContinue || it.batchInfoMiraheze.canContinue || it.batchInfoSparql.canContinue,
+                    hasPreviousPage = it.batchInfo.wikibase.startOffset > -1
+                            || it.batchInfo.sparql.startOffset > -1
+                            || it.batchInfo.miraheze.startOffset > -1,
+                    hasNextPage = it.batchInfo.wikibase.`continue` || it.batchInfo.miraheze.`continue` || it.batchInfo.sparql.`continue`,
                     boxInfo = it.boxInfo,
                     batchInfo = it.batchInfo
 

@@ -53,7 +53,7 @@ class QueryServiceDispatcher {
             HttpMethod.POST,
             createEntity(queryStr)
         ).body
-        //println(response)
+        //println("sparql response:$response")
         return json.decodeFromString<T>(response ?: "")
     }
 }

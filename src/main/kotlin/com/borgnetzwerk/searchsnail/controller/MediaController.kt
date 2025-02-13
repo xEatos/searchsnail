@@ -3,23 +3,22 @@ package com.borgnetzwerk.searchsnail.controller
 import com.borgnetzwerk.searchsnail.controller.domain.*
 import com.borgnetzwerk.searchsnail.domain.model.*
 import com.borgnetzwerk.searchsnail.domain.service.media.MediaService
-import com.borgnetzwerk.searchsnail.domain.service.search.BatchInfo
 import com.borgnetzwerk.searchsnail.domain.service.search.SearchStrategyResolver
 import org.springframework.graphql.data.method.annotation.Argument
 import org.springframework.graphql.data.method.annotation.QueryMapping
 import org.springframework.stereotype.Controller
 
-@Controller
+
 class MediaController(
     val mediaService: MediaService,
     val searchStrategyResolver: SearchStrategyResolver,
 ) {
 
-    @QueryMapping
+
     fun mediaConnections(
-        @Argument first: Int,
-        @Argument after: WikiBatchAfterQL,
-        @Argument filter: List<FilterSelectionGraphQL>?,
+       first: Int,
+        after: WikiBatchAfterQL,
+        filter: List<FilterSelectionInputGraphQL>?,
     ): ConnectionGraphQL<LeanMediumGraphQL> {
         val filterSelections = filter?.mapNotNull { f ->
             UnresolvedFilterId(f.filterId).resolve()?.let { resolvedFilterId ->

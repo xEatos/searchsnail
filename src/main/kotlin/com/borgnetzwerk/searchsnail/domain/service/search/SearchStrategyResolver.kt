@@ -68,12 +68,12 @@ class SearchStrategyResolver(
 
     fun search(
         filters: List<FilterSelection>,
-        offsetMap: Map<Provenance, Offset> = mapOf("sparql" to -1),
+        offsetMap: Map<Provenance, Offset>,
         limit: Int,
     ): Pair<Map<Provenance, IndexedPage<LeanMedium>>, List<FilterSelection>> {
         val (indexedPageMap, foundFilters) = batchSearch(filters.getFreeText().toContent(), filters, offsetMap, limit)
         val mergedSize = indexedPageMap.entries.fold(0) { acc, (_, ie) -> acc + ie.elements.size }
-
+        println("mergedSize: $mergedSize")
         if (mergedSize >= limit
             || !indexedPageMap.entries.fold(false) { acc, (_, indexedPage) -> indexedPage.hasNextPage || acc }
         ) { // can't fetch more or don't need to

@@ -3,6 +3,7 @@ package com.borgnetzwerk.searchsnail.controller
 import com.borgnetzwerk.searchsnail.controller.domain.*
 import com.borgnetzwerk.searchsnail.domain.model.*
 import com.borgnetzwerk.searchsnail.domain.service.media.MediaService
+import com.borgnetzwerk.searchsnail.domain.service.search.BatchInfo
 import com.borgnetzwerk.searchsnail.domain.service.search.SearchStrategyResolver
 import org.springframework.graphql.data.method.annotation.Argument
 import org.springframework.graphql.data.method.annotation.QueryMapping
@@ -35,7 +36,15 @@ class MediaController(
                 )
             }
         }
-
+        return ConnectionGraphQL(emptyList(), PageInfoGraphQL(
+            false, false, WikiBatchInfoGraphQL(
+                WikiBatchContinueGraphQL(-1, -1, false),
+                WikiBatchContinueGraphQL(-1, -1, false),
+                WikiBatchContinueGraphQL(-1, -1, false)
+            ),
+            boxInfo = BoxInfoGraphQL(emptyList())
+        ))
+        /*
         return searchStrategyResolver.getMedia(first + 1, after, filterSelections ?: emptyList()).let {
             println(it)
             ConnectionGraphQL(
@@ -62,7 +71,7 @@ class MediaController(
 
                 )
             )
+            }
+         */
         }
     }
-
-}

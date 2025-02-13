@@ -27,93 +27,6 @@ class SearchStrategyResolver(
     val mediaService: MediaService,
 ) {
 
-    fun getMedia(first: Int, after: WikiBatchAfterQL, filters: List<FilterSelection>): SearchStrategyAnswer {
-
-        val searchTextFs = filters.getFreeText()
-
-        /*
-        return if (!searchTextFs.isNullOrEmpty()) { // search string
-            val searchWikibaseAnswer = searchWikibase.getBatch(searchTextFs, after.wikibase, first)
-            val searchMirahezeAnswer = searchMiraheze.getBatch(searchTextFs, after.miraheze, first)
-
-            val mergedIris = mutableListOf<IriWithMetadata>();
-            for (i in 0..max(searchWikibaseAnswer.iris.size, searchMirahezeAnswer.iris.size)) {
-                if (i < searchWikibaseAnswer.iris.size) {
-                    mergedIris.add(searchWikibaseAnswer.iris[i])
-                }
-                if (i < searchMirahezeAnswer.iris.size) {
-                    mergedIris.add(searchMirahezeAnswer.iris[i])
-                }
-            }
-
-            val iris = mergedIris.slice(IntRange(0, first - 1)) // todo remapping with results from mediaService (indices)
-
-            val mediaResult = mediaService.filterIRIs(iris.map { it.iri }, filters)
-            SearchStrategyAnswer(
-                mediaResult,
-                WikiBatchInfoGraphQL(
-                    WikiBatchContinueGraphQL(
-                        after.wikibase,
-                        iris.findLastIndexInMeta(after.wikibase, "origin", "wikibase"),
-                        searchWikibaseAnswer.canContinue?.`continue` !== null
-                    ),
-                    WikiBatchContinueGraphQL(
-                        after.miraheze,
-                        iris.findLastIndexInMeta(after.wikibase, "origin", "miraheze"),
-                        searchWikibaseAnswer.canContinue?.`continue` !== null
-                    ),
-                    WikiBatchContinueGraphQL(-1, -1, false),
-                ),
-                BoxInfoGraphQL(searchWikibaseAnswer.newFilterSelections)
-            )
-        } else { // no search string
-            val sparqlWikiResult = mediaService.getMedia(first + 1, after.sparql.toString(), emptyList())
-            SearchStrategyAnswer(
-                sparqlWikiResult.subList(0, first),
-                WikiBatchInfoGraphQL(
-                    WikiBatchContinueGraphQL(-1, -1, false),
-                    WikiBatchContinueGraphQL(-1, -1, false),
-                    WikiBatchContinueGraphQL(
-                        after.sparql,
-                        after.sparql + sparqlWikiResult.size,
-                        sparqlWikiResult.size == first + 1
-                    ),
-                ),
-                BoxInfoGraphQL(emptyList())
-            )
-        }
-
-
-
-         */
-        return if (!searchTextFs.isNullOrEmpty()) {
-            val searchWikibaseAnswer = searchWikibase.getBatch(searchTextFs, 0, 50)
-            val concatedFilters = (filters + searchWikibaseAnswer.newFilterSelections)
-            val searchMirahezeAnswer = searchMiraheze.getBatch(searchTextFs, 0, 50)
-            val iris = (searchMirahezeAnswer.iris + searchWikibaseAnswer.iris).map { it.iri }
-            println("wbSize: ${searchWikibaseAnswer.iris.size}, miraSize: ${searchMirahezeAnswer.iris.size}, $concatedFilters")
-            println(iris)
-            SearchStrategyAnswer(
-                mediaService.filterIRIs(iris, concatedFilters), WikiBatchInfoGraphQL(
-                    WikiBatchContinueGraphQL(0, 50, false),
-                    WikiBatchContinueGraphQL(0, 50, false),
-                    WikiBatchContinueGraphQL(0, 50, false),
-                ), BoxInfoGraphQL(emptyList())
-            )
-        } else {
-            println("No Text")
-            SearchStrategyAnswer(
-                mediaService.getMedia(first, after.toString(), filters), WikiBatchInfoGraphQL(
-                    WikiBatchContinueGraphQL(0, 50, false),
-                    WikiBatchContinueGraphQL(0, 50, false),
-                    WikiBatchContinueGraphQL(0, 50, false),
-                ), BoxInfoGraphQL(emptyList())
-            )
-        }
-
-
-    }
-
     // only gives offset of pages where hasNextPage is true
     private fun batchSearch(
         searchText: ContentString?,
@@ -130,39 +43,23 @@ class SearchStrategyResolver(
             val mirahezePage = searchMiraheze.getIndexedPage(searchText.value, offsetMap["miraheze"] ?: -1, limit)
 
             val filteredMergedElements = mediaService.filterIRIs(
-                (wikibasePage.elements.optionalPlus(mirahezePage.elements)).map { IRI(it.value) }, filters
+                (wikibasePage.elements.plus(mirahezePage.elements)).map { IRI(it.value) }, filters
             ).associateBy { it.id.value }
 
-            println("before filtering and dups filtering:\nwikibase: $wikibasePage\nmiraheze: $mirahezePage")
-            // TODO fix filtering error
-            val a = Pair(
+            Pair(
                 mapOf(
                     "wikibase" to wikibasePage.filterByMedia(filteredMergedElements),
                     "miraheze" to mirahezePage.filterByMedia(filteredMergedElements)
                 ).filterDups(), foundFilters
             )
-            println("after filtering and dups filtering:\nwikibase: ${a.first["wikibase"]}\nmiraheze: ${a.first["miraheze"]}")
-            a
+
         } else {
-            offsetMap["sparql"]?.let { sparqlOffset ->
                 Pair(
                     mapOf(
                         "sparql" to mediaService.getIndexedPage(
-                            sparqlOffset,
+                            offsetMap["sparql"] ?: -1,
                             limit,
                             filters
-                        )
-                    ), emptyList()
-                )
-            }
-                ?: Pair(
-                    mapOf(
-                        "sparql" to IndexedPage(
-                            emptyList(),
-                            hasNextPage = false,
-                            hasPreviousPage = false,
-                            -1,
-                            -1
                         )
                     ), emptyList()
                 )
@@ -177,15 +74,12 @@ class SearchStrategyResolver(
         val (indexedPageMap, foundFilters) = batchSearch(filters.getFreeText().toContent(), filters, offsetMap, limit)
         val mergedSize = indexedPageMap.entries.fold(0) { acc, (_, ie) -> acc + ie.elements.size }
 
-        // we got a complete page and maybe more || we don't have a nextPage anywhere
         if (mergedSize >= limit
-            || indexedPageMap.entries.fold(false) { acc, (_, indexedPage) -> indexedPage.hasNextPage || acc }
-        ) {
+            || !indexedPageMap.entries.fold(false) { acc, (_, indexedPage) -> indexedPage.hasNextPage || acc }
+        ) { // can't fetch more or don't need to
             return indexedPageMap to foundFilters
-        } else {
-            // fetch more
-            val (nextIndexedPageMap, nextFoundFilters) = batchSearch(
-                filters.getFreeText().toContent(),
+        } else { // fetch more
+            val (nextIndexedPageMap, nextFoundFilters) = search(
                 filters,
                 indexedPageMap.entries.associate { (provenance, indexedPage) ->
                     Pair(
@@ -197,7 +91,7 @@ class SearchStrategyResolver(
             return indexedPageMap.entries.associate { (provenance, indexedPage) ->
                 Pair(provenance, nextIndexedPageMap[provenance]?.let { nextIndexedPage ->
                     IndexedPage(
-                        indexedPage.elements.optionalPlus(nextIndexedPage.elements),
+                        indexedPage.elements.plus(nextIndexedPage.elements),
                         nextIndexedPage.hasNextPage,
                         indexedPage.hasPreviousPage,
                         indexedPage.offset,
@@ -209,24 +103,27 @@ class SearchStrategyResolver(
     }
 
     private fun Map<Provenance, IndexedPage<LeanMedium>>.filterDups(): Map<Provenance, IndexedPage<LeanMedium>> =
-        this.entries.associate { (key, indexedElements) ->
-            Pair(
-                key,
-                indexedElements.run {
-                    IndexedPage(
-                        elements.fold(listOf()) { acc: List<IndexedElement<LeanMedium>>, element: IndexedElement<LeanMedium> ->
-                            if (acc.notExists(element) { a, b -> a.value.id == b.value.id }) acc.optionalPlus(element) else acc
-                        }
-                            .filter { indexedElement ->
-                                this@filterDups.existsInOther(key, indexedElement)
-                            },
-                        hasNextPage,
-                        hasPreviousPage,
-                        offset,
-                        limit
-                    )
-                }
-            )
+        this.toMutableMap().let { mutableMap ->
+            mutableMap.entries.forEach() { (key, indexedPage) ->
+                mutableMap[key] = IndexedPage(
+                    indexedPage.elements
+                        .fold(listOf()) { acc: List<IndexedElement<LeanMedium>>, element: IndexedElement<LeanMedium> ->
+                            if (acc.notExists(element) { a, b -> a.value.id == b.value.id } && !mutableMap.existsInOther(
+                                    key, element
+                                )
+                            ) {
+                                acc.plus(element)
+                            } else {
+                                acc
+                            }
+                        },
+                    indexedPage.hasNextPage,
+                    indexedPage.hasPreviousPage,
+                    indexedPage.offset,
+                    indexedPage.limit
+                )
+            }
+            mutableMap
         }
 
     inline private fun <T> List<T>.notExists(value: T, comparator: (a: T, b: T) -> Boolean): Boolean =
@@ -234,6 +131,7 @@ class SearchStrategyResolver(
 
     private fun <T> List<T>.existsAtLeastOnce(value: T, comparator: (a: T, b: T) -> Boolean): Boolean =
         !this.notExists(value, comparator)
+
 
     private fun <T> Map<Provenance, IndexedPage<T>>.existsInOther(
         targetProvenance: Provenance,
@@ -272,8 +170,6 @@ class SearchStrategyResolver(
     private fun <T> List<IndexedElement<T>>.optionalPlus(value: IndexedElement<T>?): List<IndexedElement<T>> =
         if (value != null) this.plus(value) else this
 
-    private fun List<FilterSelection>.hasAtLeastOneFacetedFilter(): Boolean =
-        this.find { it -> it.filterId.value is FreeText } != null
 
     private fun List<FilterSelection>.getFreeText(): String? =
         this.find { it -> it.filterId.value is FreeText && it.selections.size == 1 }
@@ -281,12 +177,11 @@ class SearchStrategyResolver(
             ?.first()
             ?.tryInjectLiteral { it -> it.value }
 
-    private fun List<IriWithMetadata>.findLastIndexInMeta(default: Int, key: String, value: String) =
-        this.lastOrNull() { it -> it.getMetadata(key) !== value }?.getMetadata("index")?.toInt() ?: default
 
 
 }
 
+@ConsistentCopyVisibility
 data class ContentString private constructor(val value: String) {
     companion object {
         fun create(value: String): ContentString? =

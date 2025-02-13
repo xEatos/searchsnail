@@ -7,6 +7,7 @@ import com.borgnetzwerk.searchsnail.domain.service.filter.FilterSelectionsServic
 import com.borgnetzwerk.searchsnail.domain.service.media.MediaService
 import com.borgnetzwerk.searchsnail.repository.internalapi.FilterSelectionRepository
 import com.borgnetzwerk.searchsnail.repository.internalapi.MediaRepository
+import com.borgnetzwerk.searchsnail.utils.sparqlqb.Namespace
 import io.kotest.core.spec.style.DescribeSpec
 import org.junit.jupiter.api.Assertions.*
 import org.junit.platform.commons.annotation.Testable
@@ -22,11 +23,37 @@ class SearchStrategyResolverTest: DescribeSpec({
                 mediaService = MediaService(MediaRepository(qsd), FilterSelectionsService(FilterSelectionRepository()))
             )
 
+            // 32, leber, ernährung
             val (indexedPageMap, foundFilters) = strategy.search(
                 filters = listOf(FilterSelection(ResolvedFilterId.create(FreeText), mutableListOf(WikiDataLiteral("32", ValueType.String, null)))),
+                offsetMap = mapOf( "miraheze" to 2, "wikibase" to 55),
                 limit = 50
             )
-            println(indexedPageMap)
+            println(indexedPageMap.entries.map { (key, value) -> "$key: ${value.elements.map { "$it\n" }}" })
+            println(indexedPageMap.entries.fold(0) { acc, (_, ie) -> acc + ie.elements.size })
+            println(foundFilters)
+        }
+    }
+})
+
+@Testable
+class SearchStrategyResolverTestNoText: DescribeSpec({
+    describe("NoText") {
+        it("NoText") {
+            val qsd = QueryServiceDispatcher()
+            val strategy = SearchStrategyResolver(
+                searchMiraheze = TextSearchMirahezeService(GenericFetchService(),qsd),
+                searchWikibase = TextSearchWikibaseService(GenericFetchService(), qsd),
+                mediaService = MediaService(MediaRepository(qsd), FilterSelectionsService(FilterSelectionRepository()))
+            )
+
+            val (indexedPageMap, foundFilters) = strategy.search(
+                filters = emptyList(), //listOf(FilterSelection(ResolvedFilterId.Companion.create(Category), mutableListOf(WikiDataResource(Namespace.ITEM("Q32").getFullIRI(), "Economics")))),
+                mapOf("sparql" to 49),
+                limit = 50
+            )
+            println(indexedPageMap.entries.map { (key, value) -> "$key: ${value.elements.map { "$it\n" }}" })
+            println(indexedPageMap.entries.fold(0) { acc, (_, ie) -> acc + ie.elements.size })
             println(foundFilters)
         }
     }

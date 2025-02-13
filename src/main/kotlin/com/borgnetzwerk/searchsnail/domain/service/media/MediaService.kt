@@ -34,9 +34,9 @@ class MediaService(
         }
 
         val queryPattern = filterSelectionsService.convertToFilterQueryPattern(filtersWithMediumTyp)
-        val mediaResult = mediaRepository.getMedia(limit, offset.toString(), queryPattern)
+        val mediaResult = mediaRepository.getMedia(limit, (offset +1).toString() /* sparql query offset is inclusive */, queryPattern)
         return IndexedPage(
-            mediaResult.mapIndexed { index, it -> IndexedElement(offset + index +1, it, "sparql" ) },
+            mediaResult.mapIndexed { index, it -> IndexedElement(offset + index + 1, it, "sparql" ) },
             hasNextPage = false,
             hasPreviousPage = false,
             offset,

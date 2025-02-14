@@ -54,15 +54,15 @@ class SearchStrategyResolver(
             )
 
         } else {
-                Pair(
-                    mapOf(
-                        "sparql" to mediaService.getIndexedPage(
-                            offsetMap["sparql"] ?: -1,
-                            limit,
-                            filters
-                        )
-                    ), emptyList()
-                )
+            Pair(
+                mapOf(
+                    "sparql" to mediaService.getIndexedPage(
+                        offsetMap["sparql"] ?: -1,
+                        limit,
+                        filters
+                    )
+                ), emptyList()
+            )
         }
     }
 
@@ -73,11 +73,10 @@ class SearchStrategyResolver(
     ): Pair<Map<Provenance, IndexedPage<LeanMedium>>, List<FilterSelection>> {
         val (indexedPageMap, foundFilters) = batchSearch(filters.getFreeText().toContent(), filters, offsetMap, limit)
         val mergedSize = indexedPageMap.entries.fold(0) { acc, (_, ie) -> acc + ie.elements.size }
-        println("mergedSize: $mergedSize")
         if (mergedSize >= limit
             || !indexedPageMap.entries.fold(false) { acc, (_, indexedPage) -> indexedPage.hasNextPage || acc }
         ) { // can't fetch more or don't need to
-            return indexedPageMap to foundFilters
+            return indexedPageMap.reduceTo(limit) to foundFilters
         } else { // fetch more
             val (nextIndexedPageMap, nextFoundFilters) = search(
                 filters,
@@ -98,9 +97,34 @@ class SearchStrategyResolver(
                         indexedPage.limit + nextIndexedPage.limit
                     )
                 } ?: indexedPage)
-            } to foundFilters + nextFoundFilters
+            }.reduceTo(limit) to foundFilters + nextFoundFilters
         }
     }
+
+    private fun Map<Provenance, IndexedPage<LeanMedium>>.reduceTo(limit: Int): Map<Provenance, IndexedPage<LeanMedium>> {
+        val pageMap = toMutableMap()
+        while (pageMap.entries.fold(0) { acc, (_, ie) -> acc + ie.elements.size } > limit && limit > 0) {
+            val provenanceWithMostElements = pageMap.provenanceWithMostElements()
+            val page = pageMap[provenanceWithMostElements?.first]
+            if (provenanceWithMostElements != null && page != null) {
+                pageMap[provenanceWithMostElements.first] = page.copy(
+                    elements = page.elements.slice(IntRange(0, provenanceWithMostElements.second -2)),
+                )
+            } else {
+                break;
+            }
+        }
+        return pageMap.toMap()
+    }
+
+    private fun Map<Provenance, IndexedPage<LeanMedium>>.provenanceWithMostElements(): Pair<Provenance, Int>? = this.entries
+        .fold(null) { acc: Pair<Provenance, Int>?, (provenance, page) ->
+            if (acc != null && acc.second > page.elements.size) {
+                acc
+            } else {
+                Pair(provenance, page.elements.size)
+            }
+        }
 
     private fun Map<Provenance, IndexedPage<LeanMedium>>.filterDups(): Map<Provenance, IndexedPage<LeanMedium>> =
         this.toMutableMap().let { mutableMap ->
@@ -176,7 +200,6 @@ class SearchStrategyResolver(
             ?.selections
             ?.first()
             ?.tryInjectLiteral { it -> it.value }
-
 
 
 }

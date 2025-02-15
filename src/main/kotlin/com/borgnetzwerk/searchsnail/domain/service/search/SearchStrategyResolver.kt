@@ -71,7 +71,8 @@ class SearchStrategyResolver(
         offsetMap: Map<Provenance, Offset>,
         limit: Int,
     ): Pair<Map<Provenance, IndexedPage<LeanMedium>>, List<FilterSelection>> {
-        val (indexedPageMap, foundFilters) = batchSearch(filters.getFreeText().toContent(), filters, offsetMap, limit)
+        val (indexedPageMap, foundFilters) = batchSearch(filters.getFreeText().toContent(), filters, offsetMap,  limit)
+        println("foundFilters: $foundFilters")
         val mergedSize = indexedPageMap.entries.fold(0) { acc, (_, ie) -> acc + ie.elements.size }
         if (mergedSize >= limit
             || !indexedPageMap.entries.fold(false) { acc, (_, indexedPage) -> indexedPage.hasNextPage || acc }
@@ -90,14 +91,14 @@ class SearchStrategyResolver(
             return indexedPageMap.entries.associate { (provenance, indexedPage) ->
                 Pair(provenance, nextIndexedPageMap[provenance]?.let { nextIndexedPage ->
                     IndexedPage(
-                        indexedPage.elements.plus(nextIndexedPage.elements),
-                        nextIndexedPage.hasNextPage,
+                        indexedPage.elements.plus(nextIndexedPage.elements), // TODO: this one here is send to user not filtering anymore
+                        nextIndexedPage.hasNextPage, // TODO maby total hits and offset of last element can help here? to be able to fetch more than 50!
                         indexedPage.hasPreviousPage,
                         indexedPage.offset,
                         indexedPage.limit + nextIndexedPage.limit
                     )
                 } ?: indexedPage)
-            }.reduceTo(limit) to foundFilters + nextFoundFilters
+            }.reduceTo(50) to foundFilters + nextFoundFilters
         }
     }
 

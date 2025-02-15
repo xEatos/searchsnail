@@ -34,10 +34,10 @@ class MediaService(
         }
 
         val queryPattern = filterSelectionsService.convertToFilterQueryPattern(filtersWithMediumTyp)
-        val mediaResult = mediaRepository.getMedia(limit, (offset +1).toString() /* sparql query offset is inclusive */, queryPattern)
+        val mediaResult = mediaRepository.getMedia(limit +1, (offset +1).toString() /* sparql query offset is inclusive */, queryPattern)
         return IndexedPage(
-            mediaResult.mapIndexed { index, it -> IndexedElement(offset + index + 1, it, "sparql" ) },
-            hasNextPage = false,
+            mediaResult.sliceTo(0, limit -1).mapIndexed { index, it -> IndexedElement(offset + index + 1, it, "sparql" ) },
+            hasNextPage = mediaResult.size > limit,
             hasPreviousPage = false,
             offset,
             limit
@@ -57,3 +57,6 @@ class MediaService(
     }
 
 }
+
+fun <T> List<T>.sliceTo(startInclusive: Int, endInclusive: Int): List<T> =
+    this.slice(IntRange(startInclusive,if (this.size -1 < endInclusive ) this.size - 1 else endInclusive))

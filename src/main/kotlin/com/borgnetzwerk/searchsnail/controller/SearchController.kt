@@ -32,6 +32,7 @@ class SearchController(
         TODO: Add a optional skip to skip wiki if it hasNoNextPage to safe a query
          */
 
+
         return MediaConnectionsGraphQL(
             media = pageMap.entries.map { (provenance, indexedPage) ->
                 MediaPageGraphQL(

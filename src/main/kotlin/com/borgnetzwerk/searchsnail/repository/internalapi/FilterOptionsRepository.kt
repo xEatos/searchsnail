@@ -82,7 +82,7 @@ class FilterOptionsRepository(
                         BasicGraphPattern(entity, predicate, variable)
                     )
             )
-        println(dsl.build())
+        //println(dsl.build())
         return webClient.fetch<QueryResult<LiteralRow>>(dsl).results.bindings.mapNotNull { row ->
             when (row.entityLabel.type) {
                 "literal" -> WikiDataLiteral(row.entityLabel.value, type, row.entityLabel.lang?.let { ISO639(it) })
@@ -120,7 +120,7 @@ class FilterOptionsRepository(
                         BasicGraphPattern(entity, Namespace.PROPT("P26"), Var("durationInSec"))
                     )
             )
-        println(dsl.build())
+        //println(dsl.build())
         return webClient.fetch<QueryResult<LiteralRow>>(dsl).results.bindings.mapNotNull { row ->
             when (row.entityLabel.type) {
                 "literal" -> WikiDataLiteral(row.entityLabel.value, ValueType.Duration, null)

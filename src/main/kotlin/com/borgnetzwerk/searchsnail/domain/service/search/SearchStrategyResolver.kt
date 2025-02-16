@@ -71,8 +71,8 @@ class SearchStrategyResolver(
         offsetMap: Map<Provenance, Offset>,
         limit: Int,
     ): Pair<Map<Provenance, IndexedPage<LeanMedium>>, List<FilterSelection>> {
-        val (indexedPageMap, foundFilters) = batchSearch(filters.getFreeText().toContent(), filters, offsetMap,  limit)
-        println("foundFilters: $foundFilters")
+        val (indexedPageMap, foundFilters) = batchSearch(filters.getFreeText().toContent(), filters, offsetMap,  max(limit*10, 500))
+
         val mergedSize = indexedPageMap.entries.fold(0) { acc, (_, ie) -> acc + ie.elements.size }
         if (mergedSize >= limit
             || !indexedPageMap.entries.fold(false) { acc, (_, indexedPage) -> indexedPage.hasNextPage || acc }
@@ -98,7 +98,7 @@ class SearchStrategyResolver(
                         indexedPage.limit + nextIndexedPage.limit
                     )
                 } ?: indexedPage)
-            }.reduceTo(50) to foundFilters + nextFoundFilters
+            }.reduceTo(limit) to foundFilters + nextFoundFilters
         }
     }
 
@@ -110,6 +110,7 @@ class SearchStrategyResolver(
             if (provenanceWithMostElements != null && page != null) {
                 pageMap[provenanceWithMostElements.first] = page.copy(
                     elements = page.elements.slice(IntRange(0, provenanceWithMostElements.second -2)),
+                    hasNextPage = true
                 )
             } else {
                 break;

@@ -168,7 +168,7 @@ class GenericFetchService{
     val json = Json() { ignoreUnknownKeys = true }
 
     final inline fun <reified T> fetch(url: URL, httpMethod: HttpMethod = HttpMethod.GET, httpEntity: HttpEntity<String>? = null): T {
-
+        println("request: $url")
         val response = restTemplate.exchange<String>(
             url.toString(),
             httpMethod,

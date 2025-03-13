@@ -3,15 +3,12 @@ package com.borgnetzwerk.searchsnail.controller
 import com.borgnetzwerk.searchsnail.controller.domain.*
 import com.borgnetzwerk.searchsnail.domain.model.*
 import com.borgnetzwerk.searchsnail.domain.service.media.MediaService
-import com.borgnetzwerk.searchsnail.domain.service.search.SearchStrategyResolver
-import org.springframework.graphql.data.method.annotation.Argument
-import org.springframework.graphql.data.method.annotation.QueryMapping
-import org.springframework.stereotype.Controller
+import com.borgnetzwerk.searchsnail.domain.service.search.SearchStrategyResolverService
 
 
 class MediaController(
     val mediaService: MediaService,
-    val searchStrategyResolver: SearchStrategyResolver,
+    val searchStrategyResolver: SearchStrategyResolverService,
 ) {
 
 

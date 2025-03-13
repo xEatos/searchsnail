@@ -7,17 +7,15 @@ import com.borgnetzwerk.searchsnail.domain.service.filter.FilterSelectionsServic
 import com.borgnetzwerk.searchsnail.domain.service.media.MediaService
 import com.borgnetzwerk.searchsnail.repository.internalapi.FilterSelectionRepository
 import com.borgnetzwerk.searchsnail.repository.internalapi.MediaRepository
-import com.borgnetzwerk.searchsnail.utils.sparqlqb.Namespace
 import io.kotest.core.spec.style.DescribeSpec
-import org.junit.jupiter.api.Assertions.*
 import org.junit.platform.commons.annotation.Testable
 
 @Testable
-class SearchStrategyResolverTest: DescribeSpec({
+class SearchStrategyResolverServiceTest: DescribeSpec({
     describe("SearchStrategyResolverTest") {
         it("only search Text") {
             val qsd = QueryServiceDispatcher()
-            val strategy = SearchStrategyResolver(
+            val strategy = SearchStrategyResolverService(
                 searchMiraheze = TextSearchMirahezeService(GenericFetchService(),qsd),
                 searchWikibase = TextSearchWikibaseService(GenericFetchService(), qsd),
                 mediaService = MediaService(MediaRepository(qsd), FilterSelectionsService(FilterSelectionRepository()))
@@ -37,11 +35,11 @@ class SearchStrategyResolverTest: DescribeSpec({
 })
 
 @Testable
-class SearchStrategyResolverTestNoText: DescribeSpec({
+class SearchStrategyResolverServiceTestNoText: DescribeSpec({
     describe("NoText") {
         it("NoText") {
             val qsd = QueryServiceDispatcher()
-            val strategy = SearchStrategyResolver(
+            val strategy = SearchStrategyResolverService(
                 searchMiraheze = TextSearchMirahezeService(GenericFetchService(),qsd),
                 searchWikibase = TextSearchWikibaseService(GenericFetchService(), qsd),
                 mediaService = MediaService(MediaRepository(qsd), FilterSelectionsService(FilterSelectionRepository()))

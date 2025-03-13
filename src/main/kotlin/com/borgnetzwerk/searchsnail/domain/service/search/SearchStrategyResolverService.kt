@@ -1,8 +1,6 @@
 package com.borgnetzwerk.searchsnail.domain.service.search
 
 import com.borgnetzwerk.searchsnail.controller.domain.BoxInfoGraphQL
-import com.borgnetzwerk.searchsnail.controller.domain.WikiBatchAfterQL
-import com.borgnetzwerk.searchsnail.controller.domain.WikiBatchContinueGraphQL
 import com.borgnetzwerk.searchsnail.controller.domain.WikiBatchInfoGraphQL
 import com.borgnetzwerk.searchsnail.domain.model.*
 import com.borgnetzwerk.searchsnail.domain.service.media.MediaService
@@ -18,7 +16,7 @@ typealias Provenance = String
 typealias Offset = Int
 
 @Service
-class SearchStrategyResolver(
+class SearchStrategyResolverService(
     @Autowired
     val searchWikibase: TextSearchWikibaseService,
     @Autowired

@@ -33,6 +33,45 @@ class DSLTest : DescribeSpec({
             val item = Namespace.ITEM
             val propt = Namespace.PROPT
             val prop = Namespace.PROP
+            val pstat = Namespace.PSTAT
+            val rdfs = Namespace.RDFS
+
+            val media = Var("media")
+            val mediaName = Var("mediaName")
+            val sectionName = Var("sectionName")
+
+            val query = DSL()
+                .select(mediaName, sectionName)
+                .where(
+                    GraphPattern()
+                        .addValues(
+                            media,
+                            listOf(
+                                IRI("https://bnwiki.wikibase.cloud/entity/Q6"),
+                                IRI("https://bnwiki.wikibase.cloud/entity/Q3046")
+                            )
+                        )
+                        .add(
+                            BasicGraphPattern(media, listOf( propt("P1"), propt("P9")), item("Q5"))
+                                .add(rdfs("label"), mediaName)
+                        ).addOptional(
+                            GraphPattern().add(
+                                BasicGraphPattern(
+                                    media,
+                                    listOf(propt("P24"), prop("P20")),
+                                    BlankNodeTail(pstat("P20"), sectionName)
+                                )
+                            )
+                        )
+                )
+
+            println(query.build())
+        }
+
+        it("query 2") {
+            val item = Namespace.ITEM
+            val propt = Namespace.PROPT
+            val prop = Namespace.PROP
             val pqual = Namespace.PQUAL
             val pstat = Namespace.PSTAT
             val rdfs = Namespace.RDFS
@@ -50,24 +89,24 @@ class DSLTest : DescribeSpec({
                 .select(channelName, name, start, end, pageid)
                 .where(
                     GraphPattern()
-                    .add(
-                        BasicGraphPattern(media, propt("P1"), item("Q5"))
-                            .add(rdfs("label"), channelName)
-                            .add(listOf(propt("P24"), prop("P20")), sectionStats)
-                    ).add(
-                        BasicGraphPattern(sectionStats, pstat("P20"), name)
-                            .add(pqual("P18"), start)
-                            .add(pqual("P19"), end)
-                            .add(pqual("P23"), index)
-                    ).addOptional(
-                        GraphPattern().add(
-                            BasicGraphPattern(sectionStats, pqual("P27"), pageid)
+                        .add(
+                            BasicGraphPattern(media, propt("P1"), item("Q5"))
+                                .add(rdfs("label"), channelName)
+                                .add(listOf(propt("P24"), prop("P20")), sectionStats)
+                        ).add(
+                            BasicGraphPattern(sectionStats, pstat("P20"), name)
+                                .add(pqual("P18"), start)
+                                .add(pqual("P19"), end)
+                                .add(pqual("P23"), index)
                         ).addOptional(
                             GraphPattern().add(
-                                BasicGraphPattern(sectionStats, pqual("P29"), pageid)
+                                BasicGraphPattern(sectionStats, pqual("P27"), pageid)
+                            ).addOptional(
+                                GraphPattern().add(
+                                    BasicGraphPattern(sectionStats, pqual("P29"), pageid)
+                                )
                             )
                         )
-                    )
                 )
                 .orderBy("ASC($index)")
                 .limit(10)

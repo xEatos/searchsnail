@@ -1,16 +1,12 @@
 package com.borgnetzwerk.searchsnail.repository.internalapi
 
-import com.borgnetzwerk.searchsnail.configuration.QueryServiceDispatcher
 import com.borgnetzwerk.searchsnail.domain.model.*
 import com.borgnetzwerk.searchsnail.domain.service.filter.FilterSelections
 import com.borgnetzwerk.searchsnail.utils.sparqlqb.*
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
 
 @Repository
-class FilterSelectionRepository(
-    @Autowired private val webClient: QueryServiceDispatcher
-) : FilterSelections {
+class FilterSelectionRepository() : FilterSelections {
     override fun resolve(filterSelections: List<FilterSelection>): FilterQueryPattern {
         val bgps = mutableListOf<BasicGraphPattern>()
         val filterStr = mutableListOf<FilterString>()

@@ -3,22 +3,19 @@ package com.borgnetzwerk.searchsnail.controller
 import com.borgnetzwerk.searchsnail.controller.domain.*
 import com.borgnetzwerk.searchsnail.domain.model.*
 import com.borgnetzwerk.searchsnail.domain.service.media.MediaService
-import com.borgnetzwerk.searchsnail.domain.service.search.SearchStrategyResolver
-import org.springframework.graphql.data.method.annotation.Argument
-import org.springframework.graphql.data.method.annotation.QueryMapping
-import org.springframework.stereotype.Controller
+import com.borgnetzwerk.searchsnail.domain.service.search.SearchStrategyResolverService
 
-@Controller
+
 class MediaController(
     val mediaService: MediaService,
-    val searchStrategyResolver: SearchStrategyResolver
+    val searchStrategyResolver: SearchStrategyResolverService,
 ) {
 
-    @QueryMapping
+
     fun mediaConnections(
-        @Argument first: Int,
-        @Argument after: String?,
-        @Argument filter: List<FilterSelectionGraphQL>?
+       first: Int,
+        after: WikiBatchAfterQL,
+        filter: List<FilterSelectionInputGraphQL>?,
     ): ConnectionGraphQL<LeanMediumGraphQL> {
         val filterSelections = filter?.mapNotNull { f ->
             UnresolvedFilterId(f.filterId).resolve()?.let { resolvedFilterId ->
@@ -35,27 +32,42 @@ class MediaController(
                 )
             }
         }
-
-        println("input - filter: $filter")
-        println("input - filter: $filterSelections")
-
-
+        return ConnectionGraphQL(emptyList(), PageInfoGraphQL(
+            false, false, WikiBatchInfoGraphQL(
+                WikiBatchContinueGraphQL(-1, -1, false),
+                WikiBatchContinueGraphQL(-1, -1, false),
+                WikiBatchContinueGraphQL(-1, -1, false)
+            ),
+            boxInfo = BoxInfoGraphQL(emptyList())
+        ))
+        /*
         return searchStrategyResolver.getMedia(first + 1, after, filterSelections ?: emptyList()).let {
             println(it)
-            it
-        }.media.map { medium ->
-                LeanMediumGraphQL(
-                    id = medium.id.value,
-                    type = medium.type,
-                    title = medium.title,
-                    publication = medium.publication.toString(),
-                    channel = medium.channel,
-                    thumbnail = medium.thumbnail?.url.toString(),
-                    duration = medium.duration
-                )
-        }.let { list ->
-            ConnectionGraphQL.resolve(list, first, after, 1)
-        }!!
-    }
+            ConnectionGraphQL(
+                edges = it.media.map { medium ->
+                    EdgeGraphQL(
+                        LeanMediumGraphQL(
+                            id = medium.id.value,
+                            type = medium.type,
+                            title = medium.title,
+                            publication = medium.publication.toString(),
+                            channel = medium.channel,
+                            thumbnail = medium.thumbnail?.url.toString(),
+                            duration = medium.duration
+                        ), 0 // TODO
+                    )
+                },
+                pageInfo = PageInfoGraphQL(
+                    hasPreviousPage = it.batchInfo.wikibase.startOffset > -1
+                            || it.batchInfo.sparql.startOffset > -1
+                            || it.batchInfo.miraheze.startOffset > -1,
+                    hasNextPage = it.batchInfo.wikibase.`continue` || it.batchInfo.miraheze.`continue` || it.batchInfo.sparql.`continue`,
+                    boxInfo = it.boxInfo,
+                    batchInfo = it.batchInfo
 
-}
+                )
+            )
+            }
+         */
+        }
+    }

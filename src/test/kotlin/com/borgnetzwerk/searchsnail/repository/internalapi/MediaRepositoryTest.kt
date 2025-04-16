@@ -1,7 +1,7 @@
 package com.borgnetzwerk.searchsnail.repository.internalapi
 
-import com.borgnetzwerk.searchsnail.configuration.QueryServiceDispatcher
 import com.borgnetzwerk.searchsnail.domain.model.*
+import com.borgnetzwerk.searchsnail.domain.service.QueryServiceDispatcher
 import com.borgnetzwerk.searchsnail.repository.serialization.WikidataObject
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldContain
@@ -10,7 +10,6 @@ import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Assertions.*
 import org.junit.platform.commons.annotation.Testable
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.web.reactive.function.client.WebClient
 import java.net.URL
 import java.time.Duration

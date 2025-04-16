@@ -1,12 +1,13 @@
 package com.borgnetzwerk.searchsnail.controller.domain
 
+import com.borgnetzwerk.searchsnail.domain.model.FilterSelection
 import kotlin.math.min
 
 /*
  TODO: Move to natural indexing, where first element has index 1. Instead of 0
     -> makes to handle after=0 easier, because it is same as null
     -> makes calculation with totalCount and first easier
-*/
+
 data class ConnectionGraphQL<T>(
     val edges: List<EdgeGraphQL<T>>,
     val pageInfo: PageInfoGraphQL,
@@ -49,12 +50,34 @@ data class ConnectionGraphQL<T>(
     }
 }
 
-data class EdgeGraphQL<T>(val node: T, val cursor: String)
+*/
+data class ConnectionGraphQL<T>(
+    val edges: List<EdgeGraphQL<T>>,
+    val pageInfo: PageInfoGraphQL,
+)
+
+data class EdgeGraphQL<T>(val node: T, val globalIndex: Int)
 
 data class PageInfoGraphQL(
     val hasPreviousPage: Boolean,
     val hasNextPage: Boolean,
-    val startCursor: String?,
-    val endCursor: String?
+    val batchInfo: WikiBatchInfoGraphQL,
+    val boxInfo: BoxInfoGraphQL,
+)
+
+data class WikiBatchInfoGraphQL(
+    val wikibase: WikiBatchContinueGraphQL,
+    val miraheze: WikiBatchContinueGraphQL,
+    val sparql: WikiBatchContinueGraphQL,
+)
+
+data class WikiBatchContinueGraphQL(
+    val startOffset: Int,
+    val endOffset: Int,
+    val `continue`: Boolean,
+)
+
+data class BoxInfoGraphQL(
+    val filtersFoundByText: List<FilterSelection>
 )
 

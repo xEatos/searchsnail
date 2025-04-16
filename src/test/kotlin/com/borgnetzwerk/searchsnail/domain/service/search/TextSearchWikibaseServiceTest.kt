@@ -10,30 +10,41 @@ import org.junit.platform.commons.annotation.Testable
 @Testable
 class TextSearchWikibaseServiceTest : DescribeSpec({
     describe("TextSearchWikibaseServiceTest") {
-        it("test 1"){
+        it("test Wikibase"){
             val textSearchWbService = TextSearchWikibaseService(
                 GenericFetchService(),
                 QueryServiceDispatcher()
             )
 
-            val searchAnswer1 = textSearchWbService.getBatch("32", 0)
-            println(searchAnswer1)
-            val searchAnswer2 = textSearchWbService.getBatch("32", searchAnswer1.canContinue?.sroffset!!)
-            println(searchAnswer2)
-            val searchAnswer3 = textSearchWbService.getBatch("32", searchAnswer2.canContinue?.sroffset!!)
-            println(searchAnswer3)
+            val searchAnswer1 = textSearchWbService.getIndexedPageAndFilters("32", -1, 10)
+            println(searchAnswer1.first.elements.map { "${it.index}: ${it.value}" })
+            println(searchAnswer1.second)
+            if(searchAnswer1.first.hasNextPage){
+                val searchAnswer2 = textSearchWbService.getIndexedPageAndFilters("32", searchAnswer1.first.elements.last().index -1, 10)
+                println(searchAnswer2.first.elements.map { "${it.index}: ${it.value} ${it.provenance}" })
+                println(searchAnswer2.second)
+                println("hasPrevious: ${searchAnswer2.first.hasPreviousPage}, next: ${searchAnswer2.first.hasNextPage}")
+            }
 
         }
 
-        it("test 2"){
+    }
+})
 
-            val textSearchMiraService = TextSearchMirahezeService(
+@Testable
+class TextSearchMirahezeServiceTest : DescribeSpec({
+    describe("TextSearchWikibaseServiceTest") {
+        it("test Miraheze"){
+            val textSearchWbService = TextSearchMirahezeService(
                 GenericFetchService(),
                 QueryServiceDispatcher()
             )
 
-            val searchAnswer1 = textSearchMiraService.getBatch("leber", 0)
-            println(searchAnswer1.iris)
+            val searchAnswer1 = textSearchWbService.getIndexedPage("leber", -1, 1)
+            val searchAnswer2 = textSearchWbService.getNextIndexedPage("leber", 10, searchAnswer1)
+            println(searchAnswer1)
+            println(searchAnswer2)
+            println(textSearchWbService.getIndexedPage("leber", -1, 50))
 
         }
 

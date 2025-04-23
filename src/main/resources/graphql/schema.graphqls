@@ -1,0 +1,239 @@
+type Query {
+    mediaConnections(
+        limit: Int!
+        offsetMap: [OffsetPair!]
+        filter: [FilterSelectionInput!]
+    ): MediaConnections
+    filterOptions: [FilterOption!]!
+    medium(mediumId: ID!): Medium
+    transcriptChapters(transcriptIds: [ID!]!): [TranscriptText!]
+    getYouTubeVideosData(key: String!, watchIds: [ID!]): [LeanMedium!]
+}
+
+type LeanMedium {
+    id: ID!
+    type: MediumType
+    title: String
+    publication: String
+    channel: String
+    thumbnail: String
+    duration: Int
+}
+
+type Medium {
+    id: ID!
+    type: MediumType
+    title: String
+    caption: Caption
+    publication: String
+    channel: WikiData
+    thumbnail: String
+    categories: [WikiData!]!
+    transcripts: [Transcript!]
+    languages: [String!]
+    subtitleLanguages: [String!]
+    duration: Int
+}
+
+type Caption {
+    id: ID!
+    text: String!
+}
+
+input TranscriptId {
+    id: ID!
+}
+
+type Transcript {
+    language: String!
+    chapters: [TranscriptChapter!]
+}
+
+type TranscriptChapter {
+    id: String
+    heading: String
+    startTimestamp: Int
+    endTimestamp: Int
+}
+
+type TranscriptText {
+    id: ID!
+    text: String!
+}
+
+enum MediumType {
+    Video
+    Podcast
+}
+
+"""
+Note: everything is optional, if medium is from Youtube we fetch data ourself.
+Otherwise we return an error if provide optional data is missing.
+"""
+input MediumInput {
+    type: MediumType!
+    title: String
+    publicationDate: String
+    language: [String!]
+    thumbnailUrl: String
+    references: [MediumReferenceInput!]!
+    categories: [String!]
+    transcript: [MediumTranscriptInput!]
+    subtitleLanguage: [String!]
+    duration: Int
+}
+
+input MediumReferenceInput {
+    url: String!
+    publishedBy: String
+    hostedBy: String
+}
+
+input MediumTranscriptInput {
+    language: String!
+    chapters: [TranscriptChaptersInput!]
+}
+
+input TranscriptChaptersInput {
+    heading: String!
+    startTimestamp: Int!
+    endTimestamp: Int!
+    text: String!
+}
+
+type MediaConnections {
+    media: [MediaPage!]!
+    foundFilters: [FilterSelection!]!
+}
+
+type MediaPage {
+    pageInfo: PageInfo!
+    edges: [MediumEdge!]
+}
+
+type PageInfo {
+    provenance: String!
+    hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
+    offset: Int!
+    limit: Int!
+}
+
+type MediumEdge {
+    cursor: Int!
+    node: LeanMedium!
+}
+
+
+input OffsetPair {
+    provenance: String!
+    offset: Int!
+}
+
+
+type FilterSelection {
+    """
+    e.g. minDate, language
+    """
+    filterId: String!
+    data: [WikiData!]!
+}
+
+enum ValueType {
+    String
+    Date
+    Duration
+    ISO639
+    Number
+    Boolean
+}
+
+type WikiDataResource {
+    """
+    " IRI with Q or P-Number
+    """
+    id: ID!
+    """
+    label of the Q or P-Number
+    """
+    label: String!
+}
+type WikiDataLiteral {
+    """
+    " Text that represents the actual value
+    """
+    value: String!
+    """
+    Datatype of the value
+    """
+    type: ValueType!
+    """
+    language tag (ISO639) of the Literal if it is a text
+    """
+    lang: String
+}
+union WikiData = WikiDataResource | WikiDataLiteral
+
+type FilterOption {
+    """
+    e.g. minDate, language (unique) -> rename to filterID: String!, then use Label as actual
+    """
+    filterId: String!
+    """
+    e.g. Datepicker, Slider, FreeSolo, LabelSearch, Radio
+    """
+    filterType: String!
+    """
+    label that should be used for the input widget
+    """
+    label: String!
+    """
+    e.g. for language: en, de. for Datepicker: interval [date A, date B]
+    """
+    options: [WikiData!]!
+    """
+    group to associate this filter
+    """
+    group: String
+}
+
+input WikiDataResourceInput {
+    """
+    " IRI with Q or P-Number
+    """
+    id: ID!
+    """
+    label of the Q or P-Number
+    """
+    label: String!
+}
+
+input WikiDataLiteralInput {
+    """
+    " Text that represents the actual value
+    """
+    value: String!
+    """
+    Datatype of the value
+    """
+    type: ValueType!
+    """
+    language tag (ISO639) of the Literal if it is a text
+    """
+    lang: String
+}
+
+input FilterSelectionInput {
+    """
+    e.g. minDate, language
+    """
+    filterId: String!
+    """
+    selected literal values, e.g. minDate: 2024-01-01
+    """
+    literals: [WikiDataLiteralInput!]
+    """
+    selected resources e.g. Q6
+    """
+    resources: [WikiDataResourceInput!]
+}
